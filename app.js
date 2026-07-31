@@ -32,6 +32,7 @@
   const VALID_DATES = new Set(TRIP_DAYS.map((day) => day.date));
   const VALID_CURRENCIES = new Set(["HKD", "KRW"]);
   const VALID_CATEGORIES = new Set(["식비", "교통", "숙소", "관광", "쇼핑", "기타"]);
+  const SECTIONS = new Set(["prepare", "trip", "settle"]);
 
   let state = loadState();
   let toastTimer = 0;
@@ -407,6 +408,9 @@
     if ($("#prepHeadCount")) $("#prepHeadCount").textContent = `${stats.done} / ${stats.total}`;
     if ($("#prepPercent")) $("#prepPercent").textContent = `${stats.percent}%`;
     if ($("#prepRemaining")) $("#prepRemaining").textContent = `${stats.remaining}개 남음`;
+    if ($("#homePrepCount")) $("#homePrepCount").textContent = `${stats.done} / ${stats.total}`;
+    if ($("#homePrepBar")) $("#homePrepBar").style.width = `${stats.percent}%`;
+    if ($("#prepProgressRing")) $("#prepProgressRing").style.setProperty("--progress", `${stats.percent}%`);
     const bar = $("#prepProgressBar");
     if (bar) {
       bar.style.width = `${stats.percent}%`;
@@ -678,7 +682,7 @@
         });
         saveState(false);
         renderRate();
-        if (repaired && PAGE === "settle") renderSettlement();
+        if (repaired && (PAGE === "settle" || PAGE === "all")) renderSettlement();
         if (force) showToast("환율을 업데이트했습니다");
       })
       .catch((error) => {
@@ -881,6 +885,35 @@
     if (PAGE === "prepare") renderPrepare();
     if (PAGE === "trip") renderTrip();
     if (PAGE === "settle") renderSettlement();
+    if (PAGE === "all") {
+      renderHome();
+      renderPrepare();
+      renderTrip();
+      renderSettlement();
+    }
+  }
+
+  function sectionFromHash() {
+    const section = window.location.hash.replace(/^#/, "");
+    return SECTIONS.has(section) ? section : "prepare";
+  }
+
+  function activateSection(section, updateHash = false, scrollToTabs = false) {
+    const next = SECTIONS.has(section) ? section : "prepare";
+    $$(".phase-panel[data-panel]").forEach((panel) => {
+      panel.hidden = panel.dataset.panel !== next;
+    });
+    $$(".phase-tab[data-section], .mobile-phase-nav [data-section]").forEach((button) => {
+      const active = button.dataset.section === next;
+      button.setAttribute("aria-selected", String(active));
+      if (button.classList.contains("phase-tab")) button.tabIndex = active ? 0 : -1;
+    });
+    document.body.dataset.activeSection = next;
+    if (updateHash) history.replaceState(null, "", `${window.location.pathname}${window.location.search}#${next}`);
+    if (scrollToTabs) {
+      const tabs = $(".phase-switcher");
+      if (tabs) window.requestAnimationFrame(() => tabs.scrollIntoView({ behavior: "smooth", block: "start" }));
+    }
   }
 
   function openItineraryDialog(prefill = null) {
@@ -1296,6 +1329,12 @@
   }
 
   function handleClick(event) {
+    const sectionButton = event.target.closest("[data-section]");
+    if (sectionButton) {
+      event.preventDefault();
+      activateSection(sectionButton.dataset.section, true, Boolean(sectionButton.closest(".mobile-phase-nav, .quick-strip")));
+      return;
+    }
     const dateButton = event.target.closest(".day-tab[data-date]");
     if (dateButton) {
       setActiveDate(dateButton.dataset.date);
@@ -1426,6 +1465,22 @@
       setActiveDate(TRIP_DAYS[next].date, true);
     });
 
+    $(".phase-tabs")?.addEventListener("keydown", (event) => {
+      if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+      const tabs = $$(".phase-tab[data-section]");
+      const current = tabs.findIndex((tab) => tab.getAttribute("aria-selected") === "true");
+      let next = current;
+      if (event.key === "ArrowLeft") next = (current - 1 + tabs.length) % tabs.length;
+      if (event.key === "ArrowRight") next = (current + 1) % tabs.length;
+      if (event.key === "Home") next = 0;
+      if (event.key === "End") next = tabs.length - 1;
+      event.preventDefault();
+      activateSection(tabs[next].dataset.section, true, false);
+      tabs[next].focus();
+    });
+
+    window.addEventListener("hashchange", () => activateSection(sectionFromHash(), false, false));
+
     window.addEventListener("storage", (event) => {
       if (event.key !== STORAGE_KEY || !event.newValue) return;
       try {
@@ -1440,6 +1495,7 @@
 
   renderPage();
   bindEvents();
-  if (PAGE === "home" || PAGE === "trip") fetchWeather(false);
-  if (PAGE === "home" || PAGE === "settle") fetchRate(false);
+  if (PAGE === "all") activateSection(sectionFromHash(), false, false);
+  if (PAGE === "home" || PAGE === "trip" || PAGE === "all") fetchWeather(false);
+  if (PAGE === "home" || PAGE === "settle" || PAGE === "all") fetchRate(false);
 })();

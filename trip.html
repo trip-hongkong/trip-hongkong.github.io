@@ -2,87 +2,11 @@
 <html lang="ko">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#102b35">
-  <meta name="description" content="홍콩 4박 5일 날짜별 일정, 날씨와 숙소 정보">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="refresh" content="0; url=index.html#trip">
+  <link rel="canonical" href="https://trip-hongkong.github.io/#trip">
   <title>일정 · Hong Kong 2026</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@500;600;700&family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=20260801-2">
-  <script defer src="app.js?v=20260801-2"></script>
+  <script>location.replace("index.html#trip");</script>
 </head>
-<body data-page="trip">
-  <a class="skip-link" href="#main">본문으로 바로가기</a>
-  <div class="save-toast" id="saveToast" role="status" aria-live="polite"></div>
-
-  <header class="site-header">
-    <div class="shell header-inner">
-      <a class="brand" href="index.html" aria-label="Hong Kong 2026 홈"><span class="brand-mark">HK</span><span><strong>Hong Kong</strong><small>15—19 AUG 2026</small></span></a>
-      <nav class="desktop-nav" aria-label="주요 메뉴"><a class="nav-home" href="index.html">홈</a><a class="nav-prepare" href="prepare.html">준비</a><a class="nav-trip" href="trip.html">일정</a><a class="nav-settle" href="settle.html">정산</a></nav>
-      <a class="header-map" href="https://maps.app.goo.gl/c4aqxDU5yhHmMNfu5?g_st=ac" target="_blank" rel="noopener noreferrer">공유 지도 <span>↗</span></a>
-    </div>
-  </header>
-
-  <main id="main" class="page-main">
-    <header class="page-head shell">
-      <div><p class="section-kicker">ITINERARY</p><h1>일정</h1><p>2026. 08. 15—19</p></div>
-      <div class="page-stat"><span>선택한 날짜</span><strong id="selectedDayLabel">DAY 1</strong></div>
-    </header>
-
-    <div class="shell">
-      <div id="daySwitcher" class="day-switcher" role="tablist" aria-label="여행 날짜"></div>
-      <div class="content-grid trip-layout">
-        <section class="main-column">
-          <article class="plain-card itinerary-panel">
-            <div class="card-title-row itinerary-heading"><div><p id="selectedDayEnglish">SATURDAY</p><h2 id="selectedDayTitle">8월 15일 · 토요일</h2></div><button class="primary-button compact" type="button" data-action="open-itinerary">+ 일정 추가</button></div>
-            <div id="timeline" class="timeline"></div>
-          </article>
-        </section>
-
-        <aside class="side-column">
-          <article class="plain-card weather-panel" id="weather">
-            <div class="card-title-row"><h2>날씨</h2><button class="icon-button" type="button" data-action="refresh-weather" aria-label="날씨 새로고침">↻</button></div>
-            <div class="current-weather"><span id="currentWeatherIcon">◌</span><div><strong id="currentWeatherText">확인 중</strong><small id="currentWeatherDetail">홍콩 현재 날씨</small></div></div>
-            <div id="weatherDays" class="weather-days"></div>
-            <p id="weatherUpdated" class="source-note"></p>
-          </article>
-
-          <article class="plain-card hotel-panel">
-            <div class="card-title-row"><h2>숙소</h2><span>HONG KONG</span></div>
-            <strong>Royal Plaza Hotel</strong>
-            <p>193 Prince Edward Road West, Kowloon</p>
-            <div class="button-row"><a class="secondary-button" href="https://www.google.com/maps/dir/?api=1&destination=Royal%20Plaza%20Hotel%2C%20193%20Prince%20Edward%20Road%20West%2C%20Kowloon%2C%20Hong%20Kong" target="_blank" rel="noopener noreferrer">길찾기 ↗</a><button class="secondary-button" type="button" data-copy="193 Prince Edward Road West, Kowloon, Hong Kong">주소 복사</button></div>
-          </article>
-
-          <article class="plain-card quick-panel">
-            <h2>바로가기</h2>
-            <div class="quick-link-list">
-              <a href="https://maps.app.goo.gl/c4aqxDU5yhHmMNfu5?g_st=ac" target="_blank" rel="noopener noreferrer"><span>⌖</span><b>공유 지도 · 53곳</b><i>↗</i></a>
-              <a href="https://www.google.com/maps/dir/?api=1&origin=Hong%20Kong%20International%20Airport&destination=Royal%20Plaza%20Hotel%2C%20Hong%20Kong" target="_blank" rel="noopener noreferrer"><span>✈</span><b>공항 → 숙소</b><i>↗</i></a>
-              <a href="https://translate.google.com/?sl=auto&tl=zh-TW" target="_blank" rel="noopener noreferrer"><span>文</span><b>번역기</b><i>↗</i></a>
-            </div>
-          </article>
-        </aside>
-      </div>
-    </div>
-  </main>
-
-  <dialog class="modal" id="itineraryDialog">
-    <form id="itineraryForm" class="modal-form">
-      <div class="modal-head"><div><span>일정 추가</span><h2 id="itineraryDialogDate">8월 15일</h2></div><button class="modal-close" type="button" data-action="close-itinerary" aria-label="닫기">×</button></div>
-      <div class="form-grid two-cols">
-        <label><span>날짜</span><select id="itineraryDate" name="date"><option value="2026-08-15">8월 15일 · 토</option><option value="2026-08-16">8월 16일 · 일</option><option value="2026-08-17">8월 17일 · 월</option><option value="2026-08-18">8월 18일 · 화</option><option value="2026-08-19">8월 19일 · 수</option></select></label>
-        <label><span>시간</span><input name="time" type="time"></label>
-        <label class="span-2"><span>일정</span><input id="itineraryTitle" name="title" type="text" maxlength="80" placeholder="예: 숙소 체크인" required></label>
-        <label class="span-2"><span>장소</span><input id="itineraryPlace" name="place" type="text" maxlength="100" placeholder="지도 검색에 사용됩니다"></label>
-        <label class="span-2"><span>메모</span><textarea name="note" rows="3" maxlength="180" placeholder="이동 방법이나 예약 정보를 입력하세요"></textarea></label>
-      </div>
-      <div class="modal-actions"><button class="secondary-button" type="button" data-action="close-itinerary">취소</button><button class="primary-button" type="submit">저장</button></div>
-    </form>
-  </dialog>
-
-  <nav class="mobile-nav" aria-label="모바일 메뉴"><a class="nav-home" href="index.html"><span>⌂</span><b>홈</b></a><a class="nav-prepare" href="prepare.html"><span>✓</span><b>준비</b></a><a class="nav-trip" href="trip.html"><span>⌖</span><b>일정</b></a><a class="nav-settle" href="settle.html"><span>$</span><b>정산</b></a></nav>
-  <footer class="site-footer"><div class="shell footer-inner"><span>Hong Kong · 2026.08.15—19</span><a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Weather by Open-Meteo ↗</a></div></footer>
-</body>
+<body><a href="index.html#trip">일정 화면으로 이동</a></body>
 </html>
