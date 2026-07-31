@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#102b35">
+  <meta name="description" content="홍콩 여행 공동 지출, 영수증과 사람별 정산">
+  <title>정산 · Hong Kong 2026</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@500;600;700&family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css?v=20260801-2">
+  <script defer src="app.js?v=20260801-2"></script>
+</head>
+<body data-page="settle">
+  <a class="skip-link" href="#main">본문으로 바로가기</a>
+  <div class="save-toast" id="saveToast" role="status" aria-live="polite"></div>
+
+  <header class="site-header">
+    <div class="shell header-inner">
+      <a class="brand" href="index.html" aria-label="Hong Kong 2026 홈"><span class="brand-mark">HK</span><span><strong>Hong Kong</strong><small>15—19 AUG 2026</small></span></a>
+      <nav class="desktop-nav" aria-label="주요 메뉴"><a class="nav-home" href="index.html">홈</a><a class="nav-prepare" href="prepare.html">준비</a><a class="nav-trip" href="trip.html">일정</a><a class="nav-settle" href="settle.html">정산</a></nav>
+      <a class="header-map" href="https://maps.app.goo.gl/c4aqxDU5yhHmMNfu5?g_st=ac" target="_blank" rel="noopener noreferrer">공유 지도 <span>↗</span></a>
+    </div>
+  </header>
+
+  <main id="main" class="page-main">
+    <header class="page-head shell settle-head">
+      <div><p class="section-kicker">GROUP EXPENSES</p><h1>정산</h1><p>지출을 입력하면 최종 송금액을 계산합니다.</p></div>
+      <button class="primary-button add-expense-button" type="button" data-action="open-expense">+ 지출 추가</button>
+    </header>
+
+    <div class="shell">
+      <section class="settlement-summary" aria-label="정산 요약">
+        <article><span>총지출</span><strong id="totalExpenseKRW">₩0</strong><small id="totalExpenseHKD">HK$0</small></article>
+        <article><span>지출 건수</span><strong id="expenseCount">0건</strong><small id="receiptCount">영수증 0장</small></article>
+        <article class="summary-balance"><span>현재 상태</span><strong id="settlementHeadline">정산할 금액 없음</strong><small id="settlementSubline">지출을 추가해 주세요</small></article>
+      </section>
+
+      <div class="content-grid settle-layout">
+        <section class="main-column">
+          <article class="plain-card settlement-panel">
+            <div class="card-title-row"><div><p class="section-kicker">WHO PAYS WHOM</p><h2>보낼 금액</h2></div><span id="transferCount">0건</span></div>
+            <div id="transferList" class="transfer-list"></div>
+            <div id="balanceList" class="balance-list"></div>
+          </article>
+
+          <article class="plain-card expense-panel">
+            <div class="card-title-row"><div><p class="section-kicker">EXPENSES</p><h2>지출 내역</h2></div><select id="expenseFilter" aria-label="통화별 지출 필터"><option value="all">전체 통화</option><option value="HKD">HKD</option><option value="KRW">KRW</option></select></div>
+            <div id="expenseList" class="expense-list"></div>
+          </article>
+        </section>
+
+        <aside class="side-column">
+          <article class="plain-card exchange-panel" id="exchange">
+            <div class="card-title-row"><h2>환율 계산</h2><button class="icon-button" type="button" data-action="refresh-rate" aria-label="환율 새로고침">↻</button></div>
+            <div class="rate-display"><span>1 HKD</span><strong id="rateDisplay">불러오는 중</strong><small id="rateDate">Frankfurter</small></div>
+            <div class="converter">
+              <label><span>홍콩달러</span><div><b>HK$</b><input id="hkdInput" type="number" inputmode="decimal" min="0" step="0.01" value="100" aria-label="홍콩달러 금액"></div></label>
+              <button type="button" data-action="swap-currency" aria-label="변환 방향 바꾸기">⇅</button>
+              <label><span>원화</span><div><b>₩</b><input id="krwInput" type="number" inputmode="numeric" min="0" step="1" aria-label="원화 금액"></div></label>
+            </div>
+            <p class="source-note">참고 환율이며 실제 카드 청구액과 다를 수 있습니다.</p>
+          </article>
+
+          <article class="plain-card people-panel">
+            <div class="card-title-row"><h2>참가자</h2><span id="peopleCount">2명</span></div>
+            <div id="peopleList" class="people-list"></div>
+            <form id="personForm" class="person-form"><label class="visually-hidden" for="personName">참가자 이름</label><input id="personName" name="name" type="text" maxlength="30" placeholder="이름 추가" autocomplete="off" required><button class="secondary-button" type="submit">추가</button></form>
+          </article>
+
+          <article class="plain-card data-panel">
+            <h2>데이터</h2>
+            <p>지출과 영수증은 현재 기기에 저장됩니다.</p>
+            <div class="data-actions"><button class="secondary-button" type="button" data-action="export">전체 백업</button><label class="secondary-button" for="importFile">백업 불러오기</label><input class="visually-hidden" id="importFile" type="file" accept="application/json,.json"><button class="danger-button" type="button" data-action="reset-settlement">정산 초기화</button></div>
+          </article>
+        </aside>
+      </div>
+    </div>
+  </main>
+
+  <dialog class="modal expense-modal" id="expenseDialog">
+    <form id="expenseForm" class="modal-form">
+      <div class="modal-head"><div><span>새 지출</span><h2>누가 얼마를 냈나요?</h2></div><button class="modal-close" type="button" data-action="close-expense" aria-label="닫기">×</button></div>
+      <div class="form-grid two-cols">
+        <label><span>날짜</span><input id="expenseDate" name="date" type="date" min="2026-08-15" max="2026-08-19" value="2026-08-15" required></label>
+        <label><span>구분</span><select name="category"><option value="식비">식비</option><option value="교통">교통</option><option value="숙소">숙소</option><option value="관광">관광</option><option value="쇼핑">쇼핑</option><option value="기타">기타</option></select></label>
+        <label class="span-2"><span>항목</span><input id="expenseDescription" name="description" type="text" maxlength="80" placeholder="예: 딤섬 점심" required></label>
+        <label><span>금액</span><input name="amount" type="number" inputmode="decimal" min="0.01" max="100000000" step="0.01" placeholder="0" required></label>
+        <label><span>통화</span><select id="expenseCurrency" name="currency"><option value="HKD">HKD · 홍콩달러</option><option value="KRW">KRW · 원화</option></select></label>
+        <label class="span-2"><span>결제한 사람</span><select id="expensePayer" name="payer" required></select></label>
+        <fieldset class="span-2 split-field"><legend>함께 나눌 사람</legend><div id="splitPeople" class="split-people"></div><small>선택한 사람끼리 똑같이 나눕니다.</small></fieldset>
+        <label class="span-2 receipt-field"><span>영수증 사진 <small>선택</small></span><input id="receiptInput" name="receipt" type="file" accept="image/jpeg,image/png,image/webp" capture="environment"><div id="receiptPreview" class="receipt-preview"><span>＋</span><p>사진 촬영 또는 파일 선택</p></div></label>
+      </div>
+      <div class="rate-snapshot" id="expenseRateNote">현재 환율로 원화 금액을 저장합니다.</div>
+      <div class="modal-actions"><button class="secondary-button" type="button" data-action="close-expense">취소</button><button class="primary-button" id="expenseSubmit" type="submit">저장</button></div>
+    </form>
+  </dialog>
+
+  <dialog class="receipt-dialog" id="receiptDialog"><button type="button" data-action="close-receipt" aria-label="영수증 닫기">×</button><img id="receiptFullImage" alt="영수증 사진"><p id="receiptCaption"></p></dialog>
+
+  <nav class="mobile-nav" aria-label="모바일 메뉴"><a class="nav-home" href="index.html"><span>⌂</span><b>홈</b></a><a class="nav-prepare" href="prepare.html"><span>✓</span><b>준비</b></a><a class="nav-trip" href="trip.html"><span>⌖</span><b>일정</b></a><a class="nav-settle" href="settle.html"><span>$</span><b>정산</b></a></nav>
+  <footer class="site-footer"><div class="shell footer-inner"><span>Hong Kong · 2026.08.15—19</span><a href="https://frankfurter.dev/" target="_blank" rel="noopener noreferrer">Rates by Frankfurter ↗</a></div></footer>
+</body>
+</html>

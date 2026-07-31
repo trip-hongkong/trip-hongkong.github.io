@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#102b35">
+  <meta name="description" content="홍콩 여행 준비 체크리스트와 예약 정보">
+  <title>준비 · Hong Kong 2026</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@500;600;700&family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css?v=20260801-2">
+  <script defer src="app.js?v=20260801-2"></script>
+</head>
+<body data-page="prepare">
+  <a class="skip-link" href="#main">본문으로 바로가기</a>
+  <div class="save-toast" id="saveToast" role="status" aria-live="polite"></div>
+
+  <header class="site-header">
+    <div class="shell header-inner">
+      <a class="brand" href="index.html" aria-label="Hong Kong 2026 홈"><span class="brand-mark">HK</span><span><strong>Hong Kong</strong><small>15—19 AUG 2026</small></span></a>
+      <nav class="desktop-nav" aria-label="주요 메뉴"><a class="nav-home" href="index.html">홈</a><a class="nav-prepare" href="prepare.html">준비</a><a class="nav-trip" href="trip.html">일정</a><a class="nav-settle" href="settle.html">정산</a></nav>
+      <a class="header-map" href="https://maps.app.goo.gl/c4aqxDU5yhHmMNfu5?g_st=ac" target="_blank" rel="noopener noreferrer">공유 지도 <span>↗</span></a>
+    </div>
+  </header>
+
+  <main id="main" class="page-main">
+    <header class="page-head shell">
+      <div><p class="section-kicker">BEFORE THE TRIP</p><h1>준비</h1><p>체크리스트와 예약 정보</p></div>
+      <div class="page-stat"><span>완료</span><strong id="prepHeadCount">2 / 12</strong></div>
+    </header>
+
+    <div class="shell content-grid prepare-layout">
+      <section class="main-column">
+        <article class="plain-card progress-panel">
+          <div class="progress-copy"><span>준비 현황</span><strong id="prepPercent">17%</strong></div>
+          <div class="large-progress" role="progressbar" aria-label="여행 준비 진행률" aria-valuemin="0" aria-valuemax="100" aria-valuenow="17"><i id="prepProgressBar"></i></div>
+          <label class="switch-row"><input id="hideCompleted" type="checkbox"><span>완료한 항목 숨기기</span></label>
+        </article>
+
+        <article class="plain-card checklist-panel">
+          <div class="card-title-row"><h2>체크리스트</h2><span id="prepRemaining">10개 남음</span></div>
+          <div id="beforeChecklist" class="check-groups"></div>
+          <form id="checklistForm" class="inline-form">
+            <label><span>구분</span><select name="category" aria-label="체크리스트 구분"><option>예약·서류</option><option>통신·결제</option><option>가방 속</option></select></label>
+            <label class="grow"><span>새 항목</span><input id="checklistText" name="text" type="text" maxlength="80" placeholder="예: 공항 이동 예약" autocomplete="off" required></label>
+            <button class="primary-button" type="submit">추가</button>
+          </form>
+        </article>
+      </section>
+
+      <aside class="side-column">
+        <article class="plain-card reservation-panel">
+          <div class="card-title-row"><h2>예약 정보</h2><span>3건</span></div>
+          <div class="info-list">
+            <div class="info-row is-empty"><span class="info-icon">✈</span><div><small>항공</small><strong>정보 입력 전</strong><p>항공편 확정 후 업데이트</p></div></div>
+            <div class="info-row"><span class="info-icon">⌂</span><div><small>홍콩 숙소</small><strong>Royal Plaza Hotel</strong><p>193 Prince Edward Road West, Kowloon</p><div class="inline-actions"><a href="https://www.google.com/maps/dir/?api=1&destination=Royal%20Plaza%20Hotel%2C%20193%20Prince%20Edward%20Road%20West%2C%20Kowloon%2C%20Hong%20Kong" target="_blank" rel="noopener noreferrer">길찾기 ↗</a><button type="button" data-copy="193 Prince Edward Road West, Kowloon, Hong Kong">주소 복사</button></div></div></div>
+            <div class="info-row"><span class="info-icon">⌂</span><div><small>마카오 숙소 후보</small><strong>Broadway Hotel</strong><p>숙박 여부 확인 필요</p><a href="https://www.google.com/maps/search/?api=1&query=Broadway%20Hotel%20Macau" target="_blank" rel="noopener noreferrer">지도 ↗</a></div></div>
+          </div>
+        </article>
+
+        <article class="plain-card saved-panel">
+          <div class="card-title-row"><h2>저장 장소</h2><a href="https://maps.app.goo.gl/c4aqxDU5yhHmMNfu5?g_st=ac" target="_blank" rel="noopener noreferrer">53곳 전체 ↗</a></div>
+          <div id="placeSeedList" class="saved-list"></div>
+        </article>
+      </aside>
+    </div>
+  </main>
+
+  <nav class="mobile-nav" aria-label="모바일 메뉴"><a class="nav-home" href="index.html"><span>⌂</span><b>홈</b></a><a class="nav-prepare" href="prepare.html"><span>✓</span><b>준비</b></a><a class="nav-trip" href="trip.html"><span>⌖</span><b>일정</b></a><a class="nav-settle" href="settle.html"><span>$</span><b>정산</b></a></nav>
+  <footer class="site-footer"><div class="shell footer-inner"><span>Hong Kong · 2026.08.15—19</span><a href="index.html">홈으로</a></div></footer>
+</body>
+</html>

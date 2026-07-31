@@ -1,12 +1,17 @@
 "use strict";
 
 (() => {
-  const STORAGE_KEY = "trip-hongkong-hub-v1";
+  const STORAGE_KEY = "trip-hongkong-hub-v2";
+  const LEGACY_STORAGE_KEY = "trip-hongkong-hub-v1";
+  const DB_NAME = "trip-hongkong-media-v1";
+  const DB_STORE = "receipts";
   const START_DATE = "2026-08-15";
   const END_DATE = "2026-08-19";
   const TIMEZONE = "Asia/Hong_Kong";
+  const PAGE = document.body.dataset.page || "home";
   const MAP_LIST_URL = "https://maps.app.goo.gl/c4aqxDU5yhHmMNfu5?g_st=ac";
-  const WEATHER_URL = "https://api.open-meteo.com/v1/forecast?latitude=22.3193&longitude=114.1694&timezone=Asia%2FHong_Kong&forecast_days=16&current=temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,uv_index_max,sunrise,sunset,wind_speed_10m_max";
+  const WEATHER_URL = "https://api.open-meteo.com/v1/forecast?latitude=22.3193&longitude=114.1694&timezone=Asia%2FHong_Kong&forecast_days=16&current=temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max";
+  const RATE_URL = "https://api.frankfurter.dev/v2/rate/HKD/KRW";
 
   const TRIP_DAYS = [
     { date: "2026-08-15", day: 1, number: "15", weekday: "토", weekdayLong: "SATURDAY" },
@@ -17,153 +22,197 @@
   ];
 
   const PLACE_SEEDS = [
-    { name: "스타페리 터미널", tag: "HARBOUR", description: "침사추이에서 배로 건너기", query: "Star Ferry Pier Tsim Sha Tsui Hong Kong" },
-    { name: "스타의 거리", tag: "NIGHT VIEW", description: "빅토리아항 야경 산책", query: "Avenue of Stars Hong Kong" },
-    { name: "템플스트리트 야시장", tag: "NIGHT MARKET", description: "야시장과 늦은 저녁", query: "Temple Street Night Market Hong Kong" },
-    { name: "구룡채성 공원", tag: "HISTORY", description: "남문 유적과 전시 보기", query: "Kowloon Walled City Park Hong Kong" },
-    { name: "Man Mo Temple", tag: "TEMPLE", description: "셩완의 오래된 사원", query: "Man Mo Temple Hong Kong" },
-    { name: "미드레벨 에스컬레이터", tag: "WALK", description: "소호와 골목 탐방", query: "Central Mid-Levels Escalator Hong Kong" },
-    { name: "타이퀀", tag: "HERITAGE", description: "옛 경찰서·감옥 문화공간", query: "Tai Kwun Hong Kong" },
-    { name: "Apliu Street", tag: "LOCAL", description: "전자상가와 로컬 거리", query: "Apliu Street Hong Kong" }
+    { name: "스타페리 터미널", description: "침사추이에서 배로 이동", query: "Star Ferry Pier Tsim Sha Tsui Hong Kong" },
+    { name: "스타의 거리", description: "빅토리아항 야경", query: "Avenue of Stars Hong Kong" },
+    { name: "템플스트리트 야시장", description: "야시장과 저녁", query: "Temple Street Night Market Hong Kong" },
+    { name: "구룡채성 공원", description: "남문 유적과 전시", query: "Kowloon Walled City Park Hong Kong" }
   ];
 
-  const DEFAULT_STATE = {
-    schemaVersion: 1,
-    checklist: [
-      { id: "before-flight", phase: "before", category: "예약·서류", text: "항공편 예약과 수하물 규정 확인", done: false },
-      { id: "before-hotel", phase: "before", category: "예약·서류", text: "숙소 예약·체크인 정보 확인", done: false },
-      { id: "before-passport", phase: "before", category: "예약·서류", text: "여권 유효기간과 영문 이름 확인", done: false },
-      { id: "before-insurance", phase: "before", category: "예약·서류", text: "여행자 보험 가입", done: false },
-      { id: "before-esim", phase: "before", category: "통신·결제", text: "eSIM 또는 로밍 준비", done: false },
-      { id: "before-payment", phase: "before", category: "통신·결제", text: "해외 결제 카드·현금·옥토퍼스 계획", done: false },
-      { id: "before-map", phase: "before", category: "통신·결제", text: "Google 지도에 장소 모으기", done: true },
-      { id: "before-hotel-map", phase: "before", category: "통신·결제", text: "Royal Plaza Hotel 지도 저장", done: true },
-      { id: "before-adapter", phase: "before", category: "가방 속", text: "BF형 어댑터와 충전기", done: false },
-      { id: "before-rain", phase: "before", category: "가방 속", text: "작은 우산과 가벼운 우비", done: false },
-      { id: "before-medicine", phase: "before", category: "가방 속", text: "상비약과 개인 약", done: false },
-      { id: "before-shoes", phase: "before", category: "가방 속", text: "많이 걸어도 편한 신발", done: false },
-      { id: "after-expense", phase: "after", category: "여행 마무리", text: "공동 지출 정산하기", done: false },
-      { id: "after-photo", phase: "after", category: "여행 마무리", text: "사진 한 폴더에 모으기", done: false },
-      { id: "after-favorite", phase: "after", category: "여행 마무리", text: "베스트 장소와 음식 기록하기", done: false },
-      { id: "after-backup", phase: "after", category: "여행 마무리", text: "여행 데이터 JSON으로 백업하기", done: false }
-    ],
-    itinerary: [
-      { id: "seed-arrival", date: "2026-08-15", time: "", title: "홍콩 도착", place: "", note: "항공편이 정해지면 도착 시각과 이동 방법을 채워주세요." },
-      { id: "seed-departure", date: "2026-08-19", time: "", title: "체크아웃 · 귀국", place: "Royal Plaza Hotel", note: "항공편이 정해지면 공항 출발 시각을 역산해요." }
-    ],
-    expenses: [],
-    notes: { bestMoment: "", bestFood: "", nextTime: "" },
-    weatherCache: null,
-    ui: { activePhase: null, activeDate: START_DATE, hideCompleted: false }
-  };
-
-  const VALID_PHASES = new Set(["before", "during", "after"]);
+  const CHECK_CATEGORIES = ["예약·서류", "통신·결제", "가방 속"];
   const VALID_DATES = new Set(TRIP_DAYS.map((day) => day.date));
-  const BEFORE_CATEGORY_ORDER = ["예약·서류", "통신·결제", "가방 속"];
-  const AFTER_CATEGORY_ORDER = ["여행 마무리"];
+  const VALID_CURRENCIES = new Set(["HKD", "KRW"]);
+  const VALID_CATEGORIES = new Set(["식비", "교통", "숙소", "관광", "쇼핑", "기타"]);
 
   let state = loadState();
   let toastTimer = 0;
-  let noteSaveTimer = 0;
   let weatherRequest = null;
+  let rateRequest = null;
+  let pendingReceiptFile = null;
+  let pendingReceiptUrl = "";
+  let receiptDialogUrl = "";
+  let converterSource = "HKD";
+  const thumbUrls = new Set();
 
   const $ = (selector, root = document) => root.querySelector(selector);
   const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
 
-  function cloneDefault() {
-    return JSON.parse(JSON.stringify(DEFAULT_STATE));
+  function defaultState() {
+    return {
+      schemaVersion: 2,
+      checklist: [
+        { id: "before-flight", category: "예약·서류", text: "항공편과 수하물 규정 확인", done: false },
+        { id: "before-hotel", category: "예약·서류", text: "숙소 예약·체크인 정보 확인", done: false },
+        { id: "before-passport", category: "예약·서류", text: "여권 유효기간과 영문 이름 확인", done: false },
+        { id: "before-insurance", category: "예약·서류", text: "여행자 보험 가입", done: false },
+        { id: "before-esim", category: "통신·결제", text: "eSIM 또는 로밍 준비", done: false },
+        { id: "before-payment", category: "통신·결제", text: "해외 결제 카드와 현금 준비", done: false },
+        { id: "before-map", category: "통신·결제", text: "Google 지도 저장 목록 확인", done: true },
+        { id: "before-hotel-map", category: "통신·결제", text: "Royal Plaza Hotel 지도 저장", done: true },
+        { id: "before-adapter", category: "가방 속", text: "BF형 어댑터와 충전기", done: false },
+        { id: "before-rain", category: "가방 속", text: "작은 우산 또는 우비", done: false },
+        { id: "before-medicine", category: "가방 속", text: "상비약과 개인 약", done: false },
+        { id: "before-shoes", category: "가방 속", text: "걷기 편한 신발", done: false }
+      ],
+      itinerary: [
+        { id: "seed-arrival", date: "2026-08-15", time: "", title: "홍콩 도착", place: "", note: "항공편 확정 후 도착 시각과 이동 방법 입력" },
+        { id: "seed-departure", date: "2026-08-19", time: "", title: "체크아웃 · 귀국", place: "Royal Plaza Hotel", note: "항공편 확정 후 공항 출발 시각 입력" }
+      ],
+      participants: [
+        { id: "person-me", name: "나", active: true, createdAt: new Date().toISOString() },
+        { id: "person-companion", name: "동행 1", active: true, createdAt: new Date().toISOString() }
+      ],
+      expenses: [],
+      weatherCache: null,
+      rateCache: null,
+      ui: { activeDate: START_DATE, hideCompleted: false }
+    };
   }
 
   function makeId(prefix) {
-    if (globalThis.crypto && typeof globalThis.crypto.randomUUID === "function") {
-      return `${prefix}-${globalThis.crypto.randomUUID()}`;
-    }
+    if (globalThis.crypto && typeof globalThis.crypto.randomUUID === "function") return `${prefix}-${globalThis.crypto.randomUUID()}`;
     return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
   }
 
   function cleanText(value, maxLength = 200) {
-    return typeof value === "string" ? value.trim().slice(0, maxLength) : "";
+    return typeof value === "string" ? value.trim().replace(/\s+/g, " ").slice(0, maxLength) : "";
   }
 
   function sanitizeChecklist(items, fallback) {
     if (!Array.isArray(items)) return fallback;
-    return items.slice(0, 200).map((item) => {
-      if (!item || typeof item !== "object") return null;
-      const phase = VALID_PHASES.has(item.phase) ? item.phase : "before";
+    const cleaned = items.slice(0, 200).map((item) => {
+      if (!item || typeof item !== "object" || (item.phase && item.phase !== "before")) return null;
       const text = cleanText(item.text, 100);
       if (!text) return null;
       return {
         id: cleanText(item.id, 100) || makeId("check"),
-        phase,
-        category: cleanText(item.category, 40) || (phase === "after" ? "여행 마무리" : "예약·서류"),
+        category: CHECK_CATEGORIES.includes(item.category) ? item.category : "예약·서류",
         text,
         done: item.done === true
       };
     }).filter(Boolean);
+    return cleaned.length ? cleaned : fallback;
   }
 
   function sanitizeItinerary(items, fallback) {
     if (!Array.isArray(items)) return fallback;
-    return items.slice(0, 300).map((item) => {
+    const cleaned = items.slice(0, 300).map((item) => {
       if (!item || typeof item !== "object") return null;
-      const date = VALID_DATES.has(item.date) ? item.date : START_DATE;
       const title = cleanText(item.title, 100);
       if (!title) return null;
       return {
         id: cleanText(item.id, 100) || makeId("plan"),
-        date,
+        date: VALID_DATES.has(item.date) ? item.date : START_DATE,
         time: /^([01]\d|2[0-3]):[0-5]\d$/.test(item.time) ? item.time : "",
         title,
         place: cleanText(item.place, 120),
         note: cleanText(item.note, 220)
       };
     }).filter(Boolean);
+    return cleaned.length ? cleaned : fallback;
   }
 
-  function sanitizeExpenses(items) {
-    if (!Array.isArray(items)) return [];
-    return items.slice(0, 500).map((item) => {
+  function sanitizeParticipants(items, fallback) {
+    if (!Array.isArray(items)) return fallback;
+    const ids = new Set();
+    const names = new Set();
+    const cleaned = items.slice(0, 30).map((item) => {
       if (!item || typeof item !== "object") return null;
-      const description = cleanText(item.description, 100);
-      const amount = Number(item.amount);
-      if (!description || !Number.isFinite(amount) || amount <= 0) return null;
+      const name = cleanText(item.name, 30);
+      if (!name || names.has(name.toLocaleLowerCase())) return null;
+      let id = cleanText(item.id, 100) || makeId("person");
+      if (ids.has(id)) id = makeId("person");
+      ids.add(id);
+      names.add(name.toLocaleLowerCase());
+      return { id, name, active: item.active !== false, createdAt: cleanText(item.createdAt, 40) || new Date().toISOString() };
+    }).filter(Boolean);
+    return cleaned.length ? cleaned : fallback;
+  }
+
+  function sanitizeCache(cache, type) {
+    if (!cache || typeof cache !== "object") return null;
+    if (type === "weather" && cache.data && typeof cache.data === "object" && typeof cache.fetchedAt === "string") {
+      return { data: cache.data, fetchedAt: cache.fetchedAt };
+    }
+    if (type === "rate") {
+      const rate = Number(cache.rate);
+      if (Number.isFinite(rate) && rate > 0 && typeof cache.date === "string" && typeof cache.fetchedAt === "string") {
+        return { rate, date: cache.date, fetchedAt: cache.fetchedAt };
+      }
+    }
+    return null;
+  }
+
+  function sanitizeExpenses(items, participants, rateCache) {
+    if (!Array.isArray(items)) return [];
+    const participantIds = new Set(participants.map((person) => person.id));
+    const fallbackPayer = participants[0].id;
+    const fallbackSplit = participants.filter((person) => person.active).map((person) => person.id);
+    return items.slice(0, 1000).map((item) => {
+      if (!item || typeof item !== "object") return null;
+      const description = cleanText(item.description || item.title, 100);
+      if (!description) return null;
+      const currency = VALID_CURRENCIES.has(item.currency) ? item.currency : "HKD";
+      let amountMinor = Number(item.amountMinor);
+      if (!Number.isSafeInteger(amountMinor) || amountMinor <= 0) {
+        const legacyAmount = Number(item.amount);
+        amountMinor = currency === "HKD" ? Math.round(legacyAmount * 100) : Math.round(legacyAmount);
+      }
+      if (!Number.isSafeInteger(amountMinor) || amountMinor <= 0 || amountMinor > 10_000_000_000) return null;
+      const payerId = participantIds.has(item.payerId) ? item.payerId : fallbackPayer;
+      const rawSplit = item.split && Array.isArray(item.split.participantIds) ? item.split.participantIds : item.splitWith;
+      const splitIds = Array.isArray(rawSplit) ? [...new Set(rawSplit.filter((id) => participantIds.has(id)))] : fallbackSplit;
+      if (!splitIds.length) splitIds.push(payerId);
+      let fxRateMicros = Number(item.fxRateMicros);
+      if (!Number.isSafeInteger(fxRateMicros) || fxRateMicros <= 0) {
+        fxRateMicros = currency === "HKD" && rateCache ? Math.round(rateCache.rate * 1_000_000) : 0;
+      }
+      let baseAmountKRW = Number(item.baseAmountKRW);
+      if (!Number.isSafeInteger(baseAmountKRW) || baseAmountKRW < 0) {
+        baseAmountKRW = currency === "KRW" ? amountMinor : fxRateMicros ? convertToKRW(amountMinor, fxRateMicros) : 0;
+      }
       return {
         id: cleanText(item.id, 100) || makeId("expense"),
-        date: VALID_DATES.has(item.date) ? item.date : START_DATE,
-        category: cleanText(item.category, 30) || "기타",
+        date: /^\d{4}-\d{2}-\d{2}$/.test(item.date) ? item.date : START_DATE,
+        category: VALID_CATEGORIES.has(item.category) ? item.category : "기타",
         description,
-        amount: Math.round(amount * 100) / 100
+        currency,
+        amountMinor,
+        baseAmountKRW,
+        fxRateMicros,
+        payerId,
+        split: { mode: "equal", participantIds: splitIds },
+        receiptId: cleanText(item.receiptId, 100),
+        createdAt: cleanText(item.createdAt, 40) || new Date().toISOString()
       };
     }).filter(Boolean);
   }
 
   function sanitizeState(input) {
-    const base = cloneDefault();
-    if (!input || typeof input !== "object") {
-      base.ui.activePhase = getAutoPhase();
-      return base;
-    }
-
-    const notes = input.notes && typeof input.notes === "object" ? input.notes : {};
+    const base = defaultState();
+    if (!input || typeof input !== "object") return base;
+    const rateCache = sanitizeCache(input.rateCache, "rate");
+    const participants = sanitizeParticipants(input.participants, base.participants);
     const ui = input.ui && typeof input.ui === "object" ? input.ui : {};
-    const cached = input.weatherCache && typeof input.weatherCache === "object" ? input.weatherCache : null;
-
     return {
-      schemaVersion: 1,
+      schemaVersion: 2,
       checklist: sanitizeChecklist(input.checklist, base.checklist),
       itinerary: sanitizeItinerary(input.itinerary, base.itinerary),
-      expenses: sanitizeExpenses(input.expenses),
-      notes: {
-        bestMoment: cleanText(notes.bestMoment, 500),
-        bestFood: cleanText(notes.bestFood, 500),
-        nextTime: cleanText(notes.nextTime, 500)
-      },
-      weatherCache: cached && typeof cached.fetchedAt === "string" && cached.data && typeof cached.data === "object"
-        ? { fetchedAt: cached.fetchedAt, data: cached.data }
-        : null,
+      participants,
+      expenses: sanitizeExpenses(input.expenses, participants, rateCache),
+      weatherCache: sanitizeCache(input.weatherCache, "weather"),
+      rateCache,
       ui: {
-        activePhase: VALID_PHASES.has(ui.activePhase) ? ui.activePhase : getAutoPhase(),
-        activeDate: VALID_DATES.has(ui.activeDate) ? ui.activeDate : getBestActiveDate(),
+        activeDate: VALID_DATES.has(ui.activeDate) ? ui.activeDate : bestActiveDate(),
         hideCompleted: ui.hideCompleted === true
       }
     };
@@ -171,21 +220,27 @@
 
   function loadState() {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      return raw ? sanitizeState(JSON.parse(raw)) : sanitizeState(null);
+      const current = localStorage.getItem(STORAGE_KEY);
+      if (current) return sanitizeState(JSON.parse(current));
+      const legacy = localStorage.getItem(LEGACY_STORAGE_KEY);
+      if (legacy) {
+        const migrated = sanitizeState(JSON.parse(legacy));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(migrated));
+        return migrated;
+      }
     } catch (error) {
-      console.warn("저장된 여행 데이터를 불러오지 못했습니다.", error);
-      return sanitizeState(null);
+      console.warn("저장 데이터를 불러오지 못했습니다.", error);
     }
+    return defaultState();
   }
 
   function saveState(notify = true) {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-      if (notify) showToast("이 기기에 저장했어요");
+      if (notify) showToast("저장했습니다");
     } catch (error) {
-      console.warn("여행 데이터를 저장하지 못했습니다.", error);
-      showToast("저장 공간을 확인해 주세요", true);
+      console.warn("저장하지 못했습니다.", error);
+      showToast("브라우저 저장 공간을 확인해 주세요", true);
     }
   }
 
@@ -199,6 +254,13 @@
     toastTimer = window.setTimeout(() => toast.classList.remove("is-visible"), 1900);
   }
 
+  function createElement(tag, className, text) {
+    const element = document.createElement(tag);
+    if (className) element.className = className;
+    if (text !== undefined) element.textContent = text;
+    return element;
+  }
+
   function dateValue(dateString) {
     const [year, month, day] = dateString.split("-").map(Number);
     return Date.UTC(year, month - 1, day);
@@ -209,125 +271,112 @@
   }
 
   function todayInHongKong() {
-    const parts = new Intl.DateTimeFormat("en-CA", {
-      timeZone: TIMEZONE,
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit"
-    }).formatToParts(new Date());
+    const parts = new Intl.DateTimeFormat("en-CA", { timeZone: TIMEZONE, year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date());
     const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
     return `${values.year}-${values.month}-${values.day}`;
   }
 
-  function getAutoPhase() {
+  function bestActiveDate() {
     const today = todayInHongKong();
-    if (today < START_DATE) return "before";
-    if (today > END_DATE) return "after";
-    return "during";
+    if (VALID_DATES.has(today)) return today;
+    return today > END_DATE ? END_DATE : START_DATE;
   }
 
-  function getBestActiveDate() {
-    const today = todayInHongKong();
-    return VALID_DATES.has(today) ? today : START_DATE;
+  function selectedDay() {
+    return TRIP_DAYS.find((day) => day.date === state.ui.activeDate) || TRIP_DAYS[0];
   }
 
-  function createElement(tag, className, text) {
-    const element = document.createElement(tag);
-    if (className) element.className = className;
-    if (text !== undefined) element.textContent = text;
-    return element;
+  function formatKRW(value) {
+    return new Intl.NumberFormat("ko-KR", { style: "currency", currency: "KRW", maximumFractionDigits: 0 }).format(Math.round(value || 0));
   }
 
-  function updateCountdown() {
-    const today = todayInHongKong();
-    const countdown = $("#countdown");
-    const message = $("#phaseMessage");
-    if (!countdown || !message) return;
+  function formatHKDMinor(amountMinor) {
+    return new Intl.NumberFormat("en-HK", { style: "currency", currency: "HKD", minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(amountMinor / 100);
+  }
 
+  function formatExpenseAmount(expense) {
+    return expense.currency === "HKD" ? formatHKDMinor(expense.amountMinor) : formatKRW(expense.amountMinor);
+  }
+
+  function convertToKRW(amountMinor, rateMicros) {
+    if (!Number.isSafeInteger(amountMinor) || !Number.isSafeInteger(rateMicros) || amountMinor <= 0 || rateMicros <= 0) return 0;
+    const numerator = BigInt(amountMinor) * BigInt(rateMicros);
+    const denominator = 100n * 1_000_000n;
+    return Number((numerator + denominator / 2n) / denominator);
+  }
+
+  function initials(name) {
+    return [...name].slice(0, 2).join("").toUpperCase();
+  }
+
+  function personById(id) {
+    return state.participants.find((person) => person.id === id);
+  }
+
+  function prepStats() {
+    const total = state.checklist.length;
+    const done = state.checklist.filter((item) => item.done).length;
+    return { total, done, remaining: Math.max(0, total - done), percent: total ? Math.round((done / total) * 100) : 0 };
+  }
+
+  function updateTripStatus() {
+    const label = $("#tripStatusLabel");
+    const countdown = $("#tripCountdown");
+    const date = $("#tripStatusDate");
+    if (!label || !countdown || !date) return;
+    const today = todayInHongKong();
     if (today < START_DATE) {
-      const left = daysBetween(today, START_DATE);
-      countdown.textContent = `D–${left}`;
-      message.textContent = left <= 3 ? "마지막 준비물을 확인할 시간" : "지금은 차근차근 준비할 시간";
+      label.textContent = "여행 전";
+      countdown.textContent = `D–${daysBetween(today, START_DATE)}`;
+      date.textContent = "2026. 08. 15 출발";
     } else if (today <= END_DATE) {
       const day = daysBetween(START_DATE, today) + 1;
+      label.textContent = `여행 중 · ${day}일차`;
       countdown.textContent = `DAY ${day}`;
-      message.textContent = "오늘 필요한 정보만 바로 확인하세요";
+      date.textContent = `${today.slice(5).replace("-", ". ")}`;
     } else {
-      const since = daysBetween(END_DATE, today);
-      countdown.textContent = `+${since}`;
-      message.textContent = "좋았던 순간을 천천히 정리해요";
+      label.textContent = "여행 완료";
+      countdown.textContent = "+DONE";
+      date.textContent = "정산을 확인하세요";
     }
   }
 
-  function updateHongKongTime() {
-    const target = $("#hongKongTime");
-    if (!target) return;
-    target.textContent = new Intl.DateTimeFormat("ko-KR", {
-      timeZone: TIMEZONE,
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false
-    }).format(new Date());
-  }
-
-  function setPhase(phase, options = {}) {
-    if (!VALID_PHASES.has(phase)) return;
-    const { scroll = false, persist = true } = options;
-    state.ui.activePhase = phase;
-
-    $$(".phase-tab").forEach((tab) => {
-      const selected = tab.dataset.phase === phase;
-      tab.setAttribute("aria-selected", String(selected));
-      tab.tabIndex = selected ? 0 : -1;
-    });
-
-    $$("[data-panel]").forEach((panel) => {
-      panel.hidden = panel.dataset.panel !== phase;
-    });
-
-    $$(".mobile-phase-nav [data-phase]").forEach((button) => {
-      if (button.dataset.phase === phase) button.setAttribute("aria-current", "page");
-      else button.removeAttribute("aria-current");
-    });
-
-    if (persist) saveState(false);
-    if (scroll) {
-      const mainTop = $("#main");
-      if (mainTop) mainTop.scrollIntoView({ behavior: "smooth", block: "start" });
+  function renderHome() {
+    updateTripStatus();
+    const stats = prepStats();
+    if ($("#homePrepCount")) $("#homePrepCount").textContent = `${stats.done} / ${stats.total}`;
+    if ($("#homePrepBar")) $("#homePrepBar").style.width = `${stats.percent}%`;
+    const upcoming = [...state.itinerary].sort((a, b) => `${a.date} ${a.time || "99:99"}`.localeCompare(`${b.date} ${b.time || "99:99"}`))[0];
+    const container = $("#homeNextPlan");
+    if (container) {
+      container.replaceChildren();
+      if (!upcoming) {
+        container.append(createElement("p", "empty-state", "등록된 일정이 없습니다."));
+      } else {
+        const time = createElement("time", "", `${upcoming.date.slice(5).replace("-", ".")}\n${upcoming.time || "미정"}`);
+        time.dateTime = upcoming.date;
+        const copy = createElement("div");
+        copy.append(createElement("strong", "", upcoming.title));
+        copy.append(createElement("p", "", upcoming.place || upcoming.note || "상세 정보 입력 전"));
+        container.append(time, copy);
+      }
     }
+    renderHomeWeather(state.weatherCache ? state.weatherCache.data : null);
+    renderRate();
   }
 
-  function handlePhaseKeydown(event) {
-    const keys = ["ArrowLeft", "ArrowRight", "Home", "End"];
-    if (!keys.includes(event.key)) return;
-    event.preventDefault();
-    const tabs = $$(".phase-tab");
-    const current = tabs.indexOf(event.currentTarget);
-    let next = current;
-    if (event.key === "ArrowLeft") next = (current - 1 + tabs.length) % tabs.length;
-    if (event.key === "ArrowRight") next = (current + 1) % tabs.length;
-    if (event.key === "Home") next = 0;
-    if (event.key === "End") next = tabs.length - 1;
-    setPhase(tabs[next].dataset.phase, { scroll: false });
-    tabs[next].focus();
-  }
-
-  function renderChecklist(phase, containerSelector) {
-    const container = $(containerSelector);
+  function renderChecklist() {
+    const container = $("#beforeChecklist");
     if (!container) return;
     container.replaceChildren();
-    const categoryOrder = phase === "after" ? AFTER_CATEGORY_ORDER : BEFORE_CATEGORY_ORDER;
-    const visibleItems = state.checklist.filter((item) => item.phase === phase && !(phase === "before" && state.ui.hideCompleted && item.done));
-
-    categoryOrder.forEach((category) => {
-      const items = visibleItems.filter((item) => item.category === category);
-      if (!items.length && phase === "before") return;
+    CHECK_CATEGORIES.forEach((category) => {
+      const items = state.checklist.filter((item) => item.category === category && !(state.ui.hideCompleted && item.done));
+      if (!items.length && state.ui.hideCompleted) return;
       const group = createElement("section", "check-group");
-      const heading = createElement("h4", "", category);
+      group.append(createElement("h3", "", category));
       const list = createElement("div", "check-list");
-
       if (!items.length) {
-        list.append(createElement("p", "empty-state", "모두 완료했어요. 여행의 여운만 챙겨두세요."));
+        list.append(createElement("p", "empty-state", "등록된 항목이 없습니다."));
       } else {
         items.forEach((item) => {
           const row = createElement("div", `check-item${item.done ? " is-done" : ""}`);
@@ -337,8 +386,7 @@
           checkbox.checked = item.done;
           checkbox.dataset.checkId = item.id;
           checkbox.setAttribute("aria-label", `${item.text} ${item.done ? "완료 해제" : "완료"}`);
-          const text = createElement("span", "check-item-text", item.text);
-          label.append(checkbox, text);
+          label.append(checkbox, createElement("span", "check-item-text", item.text));
           const remove = createElement("button", "delete-button", "×");
           remove.type = "button";
           remove.dataset.action = "delete-check";
@@ -348,69 +396,53 @@
           list.append(row);
         });
       }
-
-      group.append(heading, list);
+      group.append(list);
       container.append(group);
     });
+    if (!container.children.length) container.append(createElement("p", "empty-state", "모든 항목을 완료했습니다."));
+  }
 
-    if (!container.children.length) {
-      container.append(createElement("p", "empty-state", "완료한 항목을 숨겼어요. 위의 스위치를 끄면 다시 볼 수 있습니다."));
+  function renderPrepProgress() {
+    const stats = prepStats();
+    if ($("#prepHeadCount")) $("#prepHeadCount").textContent = `${stats.done} / ${stats.total}`;
+    if ($("#prepPercent")) $("#prepPercent").textContent = `${stats.percent}%`;
+    if ($("#prepRemaining")) $("#prepRemaining").textContent = `${stats.remaining}개 남음`;
+    const bar = $("#prepProgressBar");
+    if (bar) {
+      bar.style.width = `${stats.percent}%`;
+      const progress = bar.parentElement;
+      if (progress) progress.setAttribute("aria-valuenow", String(stats.percent));
     }
   }
 
-  function updateProgress() {
-    const items = state.checklist.filter((item) => item.phase === "before");
-    const done = items.filter((item) => item.done).length;
-    const percent = items.length ? Math.round((done / items.length) * 100) : 0;
-    const ring = $("#progressRing");
-    if (ring) ring.style.setProperty("--progress", `${percent}%`);
-    if ($("#progressValue")) $("#progressValue").textContent = String(percent);
-    if ($("#progressBar")) $("#progressBar").style.width = `${percent}%`;
-    if ($("#progressCount")) $("#progressCount").textContent = `${done} / ${items.length} 완료`;
-
-    let status = "준비 중";
-    let headline = "이제 시작해볼까요?";
-    let description = "준비 목록을 하나씩 체크하면 여기서 한눈에 확인할 수 있어요.";
-    if (percent >= 100) {
-      status = "출발 준비 완료";
-      headline = "가볍게 떠날 준비 끝!";
-      description = "마지막으로 여권과 출발 시각만 한 번 더 확인해요.";
-    } else if (percent >= 70) {
-      status = "거의 다 됐어요";
-      headline = "이제 정말 얼마 안 남았어요";
-      description = "남은 항목만 확인하면 마음 편하게 출발할 수 있어요.";
-    } else if (percent >= 35) {
-      status = "순조롭게 준비 중";
-      headline = "좋아요, 하나씩 정리되고 있어요";
-      description = "예약과 통신부터 마무리하고 가방을 채워보세요.";
-    }
-    if ($("#readyStatus")) $("#readyStatus").textContent = status;
-    if ($("#progressHeadline")) $("#progressHeadline").textContent = headline;
-    if ($("#progressDescription")) $("#progressDescription").textContent = description;
-  }
-
-  function renderPlaces() {
-    const container = $("#placeSeedGrid");
+  function renderSavedPlaces() {
+    const container = $("#placeSeedList");
     if (!container) return;
     container.replaceChildren();
     PLACE_SEEDS.forEach((place, index) => {
-      const article = createElement("article", "place-seed");
-      article.dataset.index = String(index + 1).padStart(2, "0");
-      const top = createElement("div", "place-seed-top");
-      top.append(createElement("span", "place-seed-tag", place.tag), createElement("h4", "", place.name), createElement("p", "", place.description));
-      const bottom = createElement("div", "place-seed-bottom");
+      const row = createElement("div", "saved-place");
+      const copy = createElement("div");
+      copy.append(createElement("strong", "", place.name), createElement("small", "", place.description));
+      const actions = createElement("div", "inline-actions");
       const map = createElement("a", "", "지도 ↗");
       map.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place.query)}`;
       map.target = "_blank";
       map.rel = "noopener noreferrer";
-      const add = createElement("button", "", "일정에 담기");
+      const add = createElement("button", "", "+ 일정");
       add.type = "button";
       add.dataset.action = "add-place";
       add.dataset.index = String(index);
-      bottom.append(map, add);
-      article.append(top, bottom);
-      container.append(article);
+      actions.append(map, add);
+      row.append(copy, actions);
+      container.append(row);
     });
+  }
+
+  function renderPrepare() {
+    if ($("#hideCompleted")) $("#hideCompleted").checked = state.ui.hideCompleted;
+    renderPrepProgress();
+    renderChecklist();
+    renderSavedPlaces();
   }
 
   function renderDaySwitcher() {
@@ -425,61 +457,45 @@
       button.dataset.date = day.date;
       button.setAttribute("aria-selected", String(day.date === state.ui.activeDate));
       button.tabIndex = day.date === state.ui.activeDate ? 0 : -1;
-      button.setAttribute("aria-label", `8월 ${day.number}일 ${day.weekday}요일 일정`);
-      button.append(
-        createElement("span", "day-tab-date", day.number),
-        (() => {
-          const meta = createElement("span", "day-tab-meta");
-          meta.append(createElement("b", "", `DAY ${day.day}`), createElement("span", "", `${day.weekday}요일`));
-          return meta;
-        })()
-      );
+      button.append(createElement("strong", "", day.number), createElement("span", "", `${day.weekday} · DAY ${day.day}`));
       container.append(button);
     });
   }
 
   function renderTimeline() {
-    const day = TRIP_DAYS.find((item) => item.date === state.ui.activeDate) || TRIP_DAYS[0];
     const timeline = $("#timeline");
     if (!timeline) return;
-    if ($("#activeDayLabel")) $("#activeDayLabel").textContent = `DAY ${day.day} · ${day.weekdayLong}`;
-    if ($("#activeDayTitle")) $("#activeDayTitle").textContent = `8월 ${day.number}일의 일정`;
-    if ($("#itineraryDate")) $("#itineraryDate").value = day.date;
-    if ($("#expenseDate")) $("#expenseDate").value = day.date;
-    const todayBadge = $("#todayBadge");
-    if (todayBadge) todayBadge.hidden = day.date !== todayInHongKong();
-
-    const items = state.itinerary
-      .filter((item) => item.date === day.date)
-      .sort((a, b) => (a.time || "99:99").localeCompare(b.time || "99:99"));
+    const day = selectedDay();
+    if ($("#selectedDayLabel")) $("#selectedDayLabel").textContent = `DAY ${day.day}`;
+    if ($("#selectedDayEnglish")) $("#selectedDayEnglish").textContent = day.weekdayLong;
+    if ($("#selectedDayTitle")) $("#selectedDayTitle").textContent = `8월 ${day.number}일 · ${day.weekday}요일`;
+    const items = state.itinerary.filter((item) => item.date === day.date).sort((a, b) => (a.time || "99:99").localeCompare(b.time || "99:99"));
     timeline.replaceChildren();
-
     if (!items.length) {
-      timeline.append(createElement("p", "empty-state", "아직 이날의 일정이 없어요. 가장 먼저 가고 싶은 장소를 추가해보세요."));
+      timeline.append(createElement("p", "empty-state", "등록된 일정이 없습니다."));
       return;
     }
-
     items.forEach((item) => {
       const row = createElement("article", "timeline-item");
       const time = createElement("time", `timeline-time${item.time ? "" : " is-open"}`, item.time || "미정");
       time.dateTime = item.time ? `${item.date}T${item.time}` : item.date;
-      const line = createElement("span", "timeline-line");
+      const marker = createElement("span", "timeline-marker");
       const copy = createElement("div", "timeline-copy");
-      copy.append(createElement("h4", "", item.title));
+      copy.append(createElement("h3", "", item.title));
       if (item.note) copy.append(createElement("p", "", item.note));
       if (item.place) {
-        const placeLink = createElement("a", "timeline-place", `⌖ ${item.place} · 지도 ↗`);
-        placeLink.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${item.place} Hong Kong`)}`;
-        placeLink.target = "_blank";
-        placeLink.rel = "noopener noreferrer";
-        copy.append(placeLink);
+        const map = createElement("a", "", `${item.place} · 지도 ↗`);
+        map.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${item.place} Hong Kong`)}`;
+        map.target = "_blank";
+        map.rel = "noopener noreferrer";
+        copy.append(map);
       }
       const remove = createElement("button", "delete-button", "×");
       remove.type = "button";
       remove.dataset.action = "delete-itinerary";
       remove.dataset.id = item.id;
-      remove.setAttribute("aria-label", `${item.title} 일정 삭제`);
-      row.append(time, line, copy, remove);
+      remove.setAttribute("aria-label", `${item.title} 삭제`);
+      row.append(time, marker, copy, remove);
       timeline.append(row);
     });
   }
@@ -490,11 +506,14 @@
     saveState(false);
     renderDaySwitcher();
     renderTimeline();
-    renderWeather(state.weatherCache ? state.weatherCache.data : null);
-    if (focus) {
-      const active = $(`.day-tab[data-date="${date}"]`);
-      if (active) active.focus();
-    }
+    renderTripWeather(state.weatherCache ? state.weatherCache.data : null);
+    if (focus) $(`.day-tab[data-date="${date}"]`)?.focus();
+  }
+
+  function renderTrip() {
+    renderDaySwitcher();
+    renderTimeline();
+    renderTripWeather(state.weatherCache ? state.weatherCache.data : null, Boolean(state.weatherCache));
   }
 
   function weatherInfo(code) {
@@ -509,235 +528,762 @@
     return { icon: "◌", label: "날씨" };
   }
 
-  function renderWeather(data, stale = false) {
+  function renderHomeWeather(data) {
+    const text = $("#homeWeather");
+    const detail = $("#homeWeatherDetail");
+    if (!text || !detail) return;
+    if (!data || !data.current) {
+      text.textContent = "확인 전";
+      detail.textContent = "날씨 연결 필요";
+      return;
+    }
+    const temp = Number(data.current.temperature_2m);
+    const info = weatherInfo(Number(data.current.weather_code));
+    text.textContent = `${Number.isFinite(temp) ? Math.round(temp) + "°" : "--"} · ${info.label}`;
+    detail.textContent = `체감 ${Math.round(Number(data.current.apparent_temperature))}° · 습도 ${Math.round(Number(data.current.relative_humidity_2m))}%`;
+  }
+
+  function renderTripWeather(data, stale = false) {
     const currentText = $("#currentWeatherText");
     const currentIcon = $("#currentWeatherIcon");
-    const daysContainer = $("#weatherDays");
-    const updated = $("#weatherUpdated");
-    if (!daysContainer) return;
-    daysContainer.replaceChildren();
-
+    const currentDetail = $("#currentWeatherDetail");
+    const days = $("#weatherDays");
+    if (!days) return;
+    days.replaceChildren();
     if (data && data.current) {
       const info = weatherInfo(Number(data.current.weather_code));
-      const temperature = Number(data.current.temperature_2m);
-      if (currentIcon) currentIcon.textContent = info.icon;
-      if (currentText) currentText.textContent = `${Number.isFinite(temperature) ? Math.round(temperature) + "°C" : "--"} · ${info.label}`;
+      currentIcon.textContent = info.icon;
+      currentText.textContent = `${Math.round(Number(data.current.temperature_2m))}° · ${info.label}`;
+      currentDetail.textContent = `체감 ${Math.round(Number(data.current.apparent_temperature))}° · 습도 ${Math.round(Number(data.current.relative_humidity_2m))}%`;
     } else {
-      if (currentIcon) currentIcon.textContent = "◌";
-      if (currentText) currentText.textContent = "현재 날씨 확인 전";
+      currentIcon.textContent = "◌";
+      currentText.textContent = "확인 전";
+      currentDetail.textContent = "날씨 연결 필요";
     }
-
     const daily = data && data.daily ? data.daily : null;
     TRIP_DAYS.forEach((tripDay) => {
       const index = daily && Array.isArray(daily.time) ? daily.time.indexOf(tripDay.date) : -1;
-      const rawCode = index >= 0 && Array.isArray(daily.weather_code) ? daily.weather_code[index] : null;
-      const rawMax = index >= 0 && Array.isArray(daily.temperature_2m_max) ? daily.temperature_2m_max[index] : null;
-      const rawMin = index >= 0 && Array.isArray(daily.temperature_2m_min) ? daily.temperature_2m_min[index] : null;
-      const hasForecast = index >= 0 && rawCode !== null && rawCode !== undefined && rawMax !== null && rawMax !== undefined && rawMin !== null && rawMin !== undefined
-        && Number.isFinite(Number(rawCode)) && Number.isFinite(Number(rawMax)) && Number.isFinite(Number(rawMin));
-      const card = createElement("article", `weather-day${tripDay.date === state.ui.activeDate ? " is-selected" : ""}${hasForecast ? "" : " is-pending"}`);
-      const time = createElement("time", "", `${tripDay.number}일 · ${tripDay.weekday}`);
+      const rawMax = index >= 0 ? daily.temperature_2m_max?.[index] : null;
+      const rawMin = index >= 0 ? daily.temperature_2m_min?.[index] : null;
+      const rawCode = index >= 0 ? daily.weather_code?.[index] : null;
+      const max = rawMax === null || rawMax === undefined ? NaN : Number(rawMax);
+      const min = rawMin === null || rawMin === undefined ? NaN : Number(rawMin);
+      const code = rawCode === null || rawCode === undefined ? NaN : Number(rawCode);
+      const card = createElement("article", `weather-day${tripDay.date === state.ui.activeDate ? " is-selected" : ""}`);
+      const time = createElement("time", "", `${tripDay.number} ${tripDay.weekday}`);
       time.dateTime = tripDay.date;
       card.append(time);
-
-      if (!hasForecast) {
-        card.append(createElement("span", "weather-symbol", "◌"), createElement("strong", "", "예보 준비 중"), createElement("p", "", "최대 16일 전부터 표시"));
-      } else {
-        const code = Number(rawCode);
+      if ([max, min, code].every(Number.isFinite)) {
         const info = weatherInfo(code);
-        const max = Math.round(Number(rawMax));
-        const min = Math.round(Number(rawMin));
-        const rawRain = Array.isArray(daily.precipitation_probability_max) ? daily.precipitation_probability_max[index] : null;
-        const rain = rawRain === null || rawRain === undefined ? NaN : Math.round(Number(rawRain));
-        card.append(
-          createElement("span", "weather-symbol", info.icon),
-          createElement("strong", "", `${max}° / ${min}°`),
-          createElement("p", "", `${info.label} · 비 ${Number.isFinite(rain) ? rain : "--"}%`)
-        );
-      }
-      daysContainer.append(card);
-    });
-
-    if (updated) {
-      if (state.weatherCache && state.weatherCache.fetchedAt) {
-        const time = new Intl.DateTimeFormat("ko-KR", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(state.weatherCache.fetchedAt));
-        updated.textContent = `${stale ? "마지막 저장 예보 · " : "업데이트 · "}${time} · Open-Meteo`;
+        card.append(createElement("span", "", info.icon), createElement("strong", "", `${Math.round(max)}°/${Math.round(min)}°`), createElement("small", "", info.label));
       } else {
-        updated.textContent = "예보는 출발일이 가까워질수록 자동으로 채워집니다.";
+        card.append(createElement("span", "", "◌"), createElement("strong", "", "예보 전"), createElement("small", "", "준비 중"));
       }
+      days.append(card);
+    });
+    const updated = $("#weatherUpdated");
+    if (updated) {
+      updated.textContent = state.weatherCache ? `${stale ? "저장된 예보" : "업데이트"} · ${new Intl.DateTimeFormat("ko-KR", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(state.weatherCache.fetchedAt))}` : "Open-Meteo";
     }
   }
 
   async function fetchWeather(force = false) {
     if (weatherRequest) return weatherRequest;
-    const cacheAge = state.weatherCache ? Date.now() - new Date(state.weatherCache.fetchedAt).getTime() : Infinity;
-    if (!force && state.weatherCache && cacheAge < 30 * 60 * 1000) {
-      renderWeather(state.weatherCache.data);
+    const age = state.weatherCache ? Date.now() - new Date(state.weatherCache.fetchedAt).getTime() : Infinity;
+    if (!force && state.weatherCache && age < 30 * 60 * 1000) {
+      renderHomeWeather(state.weatherCache.data);
+      renderTripWeather(state.weatherCache.data);
       return;
     }
-
-    $$("[data-action='refresh-weather']").forEach((button) => {
-      button.disabled = true;
-      button.setAttribute("aria-busy", "true");
-    });
-
+    $$('[data-action="refresh-weather"]').forEach((button) => { button.disabled = true; });
     weatherRequest = fetch(WEATHER_URL, { headers: { Accept: "application/json" } })
       .then((response) => {
         if (!response.ok) throw new Error(`Weather HTTP ${response.status}`);
         return response.json();
       })
       .then((data) => {
-        state.weatherCache = { fetchedAt: new Date().toISOString(), data };
+        state.weatherCache = { data, fetchedAt: new Date().toISOString() };
         saveState(false);
-        renderWeather(data);
-        if (force) showToast("최신 날씨로 업데이트했어요");
+        renderHomeWeather(data);
+        renderTripWeather(data);
+        if (force) showToast("날씨를 업데이트했습니다");
       })
       .catch((error) => {
         console.warn("날씨를 불러오지 못했습니다.", error);
-        if (state.weatherCache) renderWeather(state.weatherCache.data, true);
-        else renderWeather(null);
-        if (force) showToast("날씨 연결을 다시 확인해 주세요", true);
+        if (state.weatherCache) {
+          renderHomeWeather(state.weatherCache.data);
+          renderTripWeather(state.weatherCache.data, true);
+        }
+        if (force) showToast("날씨를 불러오지 못했습니다", true);
       })
       .finally(() => {
-        $$("[data-action='refresh-weather']").forEach((button) => {
-          button.disabled = false;
-          button.removeAttribute("aria-busy");
-        });
+        $$('[data-action="refresh-weather"]').forEach((button) => { button.disabled = false; });
         weatherRequest = null;
       });
-
     return weatherRequest;
   }
 
-  function formatHKD(value) {
-    return new Intl.NumberFormat("en-HK", { style: "currency", currency: "HKD", maximumFractionDigits: value % 1 ? 2 : 0 }).format(value);
+  function currentRate() {
+    return state.rateCache && Number(state.rateCache.rate) > 0 ? Number(state.rateCache.rate) : 0;
   }
 
-  function renderExpenses() {
-    const container = $("#expenseList");
-    const totalTarget = $("#expenseTotal");
-    if (!container || !totalTarget) return;
-    const total = state.expenses.reduce((sum, item) => sum + item.amount, 0);
-    totalTarget.textContent = formatHKD(total);
-    container.replaceChildren();
+  function renderRate() {
+    const rate = currentRate();
+    if ($("#homeRate")) $("#homeRate").textContent = rate ? `₩${rate.toLocaleString("ko-KR", { maximumFractionDigits: 2 })}` : "확인 전";
+    if ($("#homeRateDate")) $("#homeRateDate").textContent = state.rateCache ? `${state.rateCache.date} 기준 · 1 HKD` : "HKD → KRW";
+    if ($("#rateDisplay")) $("#rateDisplay").textContent = rate ? `₩${rate.toLocaleString("ko-KR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "확인 전";
+    if ($("#rateDate")) $("#rateDate").textContent = state.rateCache ? `${state.rateCache.date} 기준 · Frankfurter` : "Frankfurter";
+    if ($("#expenseRateNote")) $("#expenseRateNote").textContent = rate ? `1 HKD = ₩${rate.toLocaleString("ko-KR", { maximumFractionDigits: 2 })} 환율로 저장합니다.` : "HKD 지출을 저장하려면 환율 연결이 필요합니다.";
+    syncConverter(converterSource);
+  }
 
-    if (!state.expenses.length) {
-      container.append(createElement("p", "empty-state", "여행 중 남긴 비용이 이곳에 정리됩니다. 첫 지출을 추가해보세요."));
+  function syncConverter(source) {
+    const hkd = $("#hkdInput");
+    const krw = $("#krwInput");
+    const rate = currentRate();
+    if (!hkd || !krw || !rate) return;
+    if (source === "KRW") {
+      const value = Number(krw.value);
+      hkd.value = Number.isFinite(value) && value >= 0 ? (value / rate).toFixed(2) : "";
+    } else {
+      const value = Number(hkd.value);
+      krw.value = Number.isFinite(value) && value >= 0 ? String(Math.round(value * rate)) : "";
+    }
+  }
+
+  async function fetchRate(force = false) {
+    if (rateRequest) return rateRequest;
+    const age = state.rateCache ? Date.now() - new Date(state.rateCache.fetchedAt).getTime() : Infinity;
+    if (!force && state.rateCache && age < 4 * 60 * 60 * 1000) {
+      renderRate();
       return;
     }
-
-    [...state.expenses]
-      .sort((a, b) => a.date.localeCompare(b.date))
-      .forEach((item) => {
-        const row = createElement("article", "expense-row");
-        const time = createElement("time", "", item.date.slice(5).replace("-", "/"));
-        time.dateTime = item.date;
-        const copy = createElement("div");
-        copy.append(createElement("span", "expense-category", item.category), createElement("p", "", item.description));
-        const amount = createElement("strong", "", formatHKD(item.amount));
-        const remove = createElement("button", "delete-button", "×");
-        remove.type = "button";
-        remove.dataset.action = "delete-expense";
-        remove.dataset.id = item.id;
-        remove.setAttribute("aria-label", `${item.description} 지출 삭제`);
-        row.append(time, copy, amount, remove);
-        container.append(row);
+    $$('[data-action="refresh-rate"]').forEach((button) => { button.disabled = true; });
+    rateRequest = fetch(RATE_URL, { headers: { Accept: "application/json" } })
+      .then((response) => {
+        if (!response.ok) throw new Error(`Rate HTTP ${response.status}`);
+        return response.json();
+      })
+      .then((data) => {
+        const rate = Number(data.rate);
+        if (!Number.isFinite(rate) || rate <= 0 || data.base !== "HKD" || data.quote !== "KRW") throw new Error("Invalid rate response");
+        state.rateCache = { rate, date: cleanText(data.date, 20), fetchedAt: new Date().toISOString() };
+        let repaired = false;
+        state.expenses.forEach((expense) => {
+          if (expense.currency === "HKD" && (!expense.fxRateMicros || !expense.baseAmountKRW)) {
+            expense.fxRateMicros = Math.round(rate * 1_000_000);
+            expense.baseAmountKRW = convertToKRW(expense.amountMinor, expense.fxRateMicros);
+            repaired = true;
+          }
+        });
+        saveState(false);
+        renderRate();
+        if (repaired && PAGE === "settle") renderSettlement();
+        if (force) showToast("환율을 업데이트했습니다");
+      })
+      .catch((error) => {
+        console.warn("환율을 불러오지 못했습니다.", error);
+        renderRate();
+        if (force) showToast("환율을 불러오지 못했습니다", true);
+      })
+      .finally(() => {
+        $$('[data-action="refresh-rate"]').forEach((button) => { button.disabled = false; });
+        rateRequest = null;
       });
+    return rateRequest;
   }
 
-  function hydrateNotes() {
-    $$('[data-note-key]').forEach((textarea) => {
-      textarea.value = state.notes[textarea.dataset.noteKey] || "";
+  function allocateEqual(total, participantIds) {
+    const unit = Math.floor(total / participantIds.length);
+    const remainder = total % participantIds.length;
+    return participantIds.map((id, index) => ({ id, amount: unit + (index < remainder ? 1 : 0) }));
+  }
+
+  function calculateBalances() {
+    const balances = new Map(state.participants.map((person) => [person.id, 0]));
+    state.expenses.forEach((expense) => {
+      if (!expense.baseAmountKRW || !expense.split.participantIds.length) return;
+      balances.set(expense.payerId, (balances.get(expense.payerId) || 0) + expense.baseAmountKRW);
+      allocateEqual(expense.baseAmountKRW, expense.split.participantIds).forEach((share) => {
+        balances.set(share.id, (balances.get(share.id) || 0) - share.amount);
+      });
+    });
+    return balances;
+  }
+
+  function calculateTransfers(balances) {
+    const debtors = [...balances.entries()].filter(([, amount]) => amount < 0).map(([id, amount]) => ({ id, amount: -amount })).sort((a, b) => b.amount - a.amount);
+    const creditors = [...balances.entries()].filter(([, amount]) => amount > 0).map(([id, amount]) => ({ id, amount })).sort((a, b) => b.amount - a.amount);
+    const transfers = [];
+    let debtorIndex = 0;
+    let creditorIndex = 0;
+    while (debtorIndex < debtors.length && creditorIndex < creditors.length) {
+      const amount = Math.min(debtors[debtorIndex].amount, creditors[creditorIndex].amount);
+      if (amount > 0) transfers.push({ from: debtors[debtorIndex].id, to: creditors[creditorIndex].id, amount });
+      debtors[debtorIndex].amount -= amount;
+      creditors[creditorIndex].amount -= amount;
+      if (debtors[debtorIndex].amount === 0) debtorIndex += 1;
+      if (creditors[creditorIndex].amount === 0) creditorIndex += 1;
+    }
+    return transfers;
+  }
+
+  function renderParticipants() {
+    const container = $("#peopleList");
+    if (!container) return;
+    container.replaceChildren();
+    state.participants.forEach((person) => {
+      const pill = createElement("span", `person-pill${person.active ? "" : " is-inactive"}`);
+      pill.append(createElement("span", "", person.active ? person.name : `${person.name} · 이전 내역`));
+      if (person.active) {
+        const remove = createElement("button", "", "×");
+        remove.type = "button";
+        remove.dataset.action = "remove-person";
+        remove.dataset.id = person.id;
+        remove.setAttribute("aria-label", `${person.name} 참가자에서 제외`);
+        pill.append(remove);
+      }
+      container.append(pill);
+    });
+    if ($("#peopleCount")) $("#peopleCount").textContent = `${state.participants.filter((person) => person.active).length}명`;
+  }
+
+  function renderExpensePeople() {
+    const payer = $("#expensePayer");
+    const split = $("#splitPeople");
+    if (!payer || !split) return;
+    const active = state.participants.filter((person) => person.active);
+    payer.replaceChildren();
+    split.replaceChildren();
+    active.forEach((person) => {
+      const option = createElement("option", "", person.name);
+      option.value = person.id;
+      payer.append(option);
+      const label = createElement("label", "split-person");
+      const checkbox = createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.name = "splitWith";
+      checkbox.value = person.id;
+      checkbox.checked = true;
+      label.append(checkbox, createElement("span", "", person.name));
+      split.append(label);
     });
   }
 
-  function renderAll() {
-    updateCountdown();
-    updateHongKongTime();
-    setPhase(state.ui.activePhase || getAutoPhase(), { scroll: false, persist: false });
-    if ($("#hideCompleted")) $("#hideCompleted").checked = state.ui.hideCompleted;
-    renderChecklist("before", "#beforeChecklist");
-    renderChecklist("after", "#afterChecklist");
-    updateProgress();
-    renderPlaces();
-    renderDaySwitcher();
-    renderTimeline();
-    renderExpenses();
-    hydrateNotes();
-    renderWeather(state.weatherCache ? state.weatherCache.data : null, Boolean(state.weatherCache));
+  function renderTransfers(balances, transfers) {
+    const transferList = $("#transferList");
+    const balanceList = $("#balanceList");
+    if (!transferList || !balanceList) return;
+    transferList.replaceChildren();
+    balanceList.replaceChildren();
+    if (!transfers.length) {
+      transferList.append(createElement("p", "empty-state", state.expenses.length ? "현재 정산이 맞습니다." : "지출을 추가하면 송금액이 표시됩니다."));
+    } else {
+      transfers.forEach((transfer) => {
+        const from = personById(transfer.from);
+        const to = personById(transfer.to);
+        if (!from || !to) return;
+        const row = createElement("div", "transfer-row");
+        const fromBox = createElement("div", "transfer-person");
+        fromBox.append(createElement("span", "person-avatar", initials(from.name)), createElement("span", "", from.name));
+        const toBox = createElement("div", "transfer-person");
+        toBox.append(createElement("span", "person-avatar", initials(to.name)), createElement("span", "", to.name));
+        row.append(fromBox, createElement("span", "transfer-arrow", "→"), toBox, createElement("strong", "", formatKRW(transfer.amount)));
+        transferList.append(row);
+      });
+    }
+    state.participants.forEach((person) => {
+      const amount = balances.get(person.id) || 0;
+      const chip = createElement("span", "balance-chip");
+      chip.append(createElement("span", "", person.name), createElement("b", "", amount > 0 ? `+${formatKRW(amount)}` : formatKRW(amount)));
+      balanceList.append(chip);
+    });
+  }
+
+  function clearThumbUrls() {
+    thumbUrls.forEach((url) => URL.revokeObjectURL(url));
+    thumbUrls.clear();
+  }
+
+  async function renderExpenseList() {
+    const container = $("#expenseList");
+    if (!container) return;
+    clearThumbUrls();
+    container.replaceChildren();
+    const filter = $("#expenseFilter")?.value || "all";
+    const items = state.expenses.filter((expense) => filter === "all" || expense.currency === filter).sort((a, b) => `${b.date} ${b.createdAt}`.localeCompare(`${a.date} ${a.createdAt}`));
+    if (!items.length) {
+      container.append(createElement("p", "empty-state", state.expenses.length ? "선택한 통화의 지출이 없습니다." : "아직 등록된 지출이 없습니다."));
+      return;
+    }
+    items.forEach((expense) => {
+      const row = createElement("article", "expense-row");
+      const date = createElement("time", "expense-date", expense.date.slice(5).replace("-", "."));
+      date.dateTime = expense.date;
+      const copy = createElement("div", "expense-copy");
+      const top = createElement("div");
+      top.append(createElement("span", "expense-category", expense.category));
+      copy.append(top, createElement("strong", "", expense.description));
+      const payer = personById(expense.payerId);
+      copy.append(createElement("small", "", `${payer ? payer.name : "알 수 없음"} 결제 · ${expense.split.participantIds.length}명 분담`));
+      const amount = createElement("div", "expense-amount");
+      amount.append(createElement("strong", "", formatExpenseAmount(expense)));
+      if (expense.currency === "HKD") amount.append(createElement("small", "", `약 ${formatKRW(expense.baseAmountKRW)}`));
+      const tools = createElement("div", "expense-tools");
+      if (expense.receiptId) {
+        const receipt = createElement("button", "receipt-thumb", "▣");
+        receipt.type = "button";
+        receipt.dataset.action = "view-receipt";
+        receipt.dataset.id = expense.id;
+        receipt.setAttribute("aria-label", `${expense.description} 영수증 보기`);
+        tools.append(receipt);
+        getReceipt(expense.id).then((record) => {
+          if (!record || !record.blob || !receipt.isConnected) return;
+          const url = URL.createObjectURL(record.blob);
+          thumbUrls.add(url);
+          const image = createElement("img");
+          image.src = url;
+          image.alt = "";
+          receipt.replaceChildren(image);
+        }).catch(() => {});
+      }
+      const remove = createElement("button", "delete-button", "×");
+      remove.type = "button";
+      remove.dataset.action = "delete-expense";
+      remove.dataset.id = expense.id;
+      remove.setAttribute("aria-label", `${expense.description} 삭제`);
+      tools.append(remove);
+      row.append(date, copy, amount, tools);
+      container.append(row);
+    });
+  }
+
+  function renderSettlement() {
+    renderParticipants();
+    const balances = calculateBalances();
+    const transfers = calculateTransfers(balances);
+    const totalKRW = state.expenses.reduce((sum, expense) => sum + expense.baseAmountKRW, 0);
+    const totalHKDMinor = state.expenses.filter((expense) => expense.currency === "HKD").reduce((sum, expense) => sum + expense.amountMinor, 0);
+    if ($("#totalExpenseKRW")) $("#totalExpenseKRW").textContent = formatKRW(totalKRW);
+    if ($("#totalExpenseHKD")) $("#totalExpenseHKD").textContent = formatHKDMinor(totalHKDMinor);
+    if ($("#expenseCount")) $("#expenseCount").textContent = `${state.expenses.length}건`;
+    if ($("#receiptCount")) $("#receiptCount").textContent = `영수증 ${state.expenses.filter((expense) => expense.receiptId).length}장`;
+    if ($("#transferCount")) $("#transferCount").textContent = `${transfers.length}건`;
+    if ($("#settlementHeadline")) $("#settlementHeadline").textContent = transfers.length ? `송금 ${transfers.length}건 필요` : "정산할 금액 없음";
+    if ($("#settlementSubline")) $("#settlementSubline").textContent = state.expenses.length ? `${state.participants.length}명 기준` : "지출을 추가해 주세요";
+    renderTransfers(balances, transfers);
+    renderExpenseList();
+    renderRate();
+  }
+
+  function renderPage() {
+    if (PAGE === "home") renderHome();
+    if (PAGE === "prepare") renderPrepare();
+    if (PAGE === "trip") renderTrip();
+    if (PAGE === "settle") renderSettlement();
+  }
+
+  function openItineraryDialog(prefill = null) {
+    const dialog = $("#itineraryDialog");
+    const form = $("#itineraryForm");
+    if (!dialog || !form) return;
+    form.reset();
+    $("#itineraryDate").value = state.ui.activeDate;
+    if (prefill) {
+      $("#itineraryTitle").value = prefill.description;
+      $("#itineraryPlace").value = prefill.name;
+    }
+    const day = selectedDay();
+    $("#itineraryDialogDate").textContent = `8월 ${day.number}일`;
+    dialog.showModal();
+    window.setTimeout(() => $("#itineraryTitle")?.focus(), 50);
+  }
+
+  function closeDialog(selector) {
+    const dialog = $(selector);
+    if (dialog && dialog.open) dialog.close();
   }
 
   function addPlaceToItinerary(index) {
     const place = PLACE_SEEDS[index];
     if (!place) return;
-    setPhase("during", { scroll: true });
-    window.setTimeout(() => {
-      const details = $("#itineraryDetails");
-      const title = $("#itineraryTitle");
-      const placeInput = $("#itineraryPlace");
-      if (details) details.open = true;
-      if (title) title.value = place.description;
-      if (placeInput) placeInput.value = place.name;
-      if (title) title.focus();
-    }, 320);
+    state.itinerary.push({ id: makeId("plan"), date: state.ui.activeDate, time: "", title: place.description, place: place.name, note: "" });
+    saveState(false);
+    showToast(`${place.name}을 8월 ${selectedDay().number}일에 추가했습니다`);
   }
 
-  function exportData() {
-    const payload = {
-      ...state,
-      exportedAt: new Date().toISOString(),
-      trip: {
-        title: "Hong Kong, here we go.",
-        destination: "Hong Kong",
-        startDate: START_DATE,
-        endDate: END_DATE,
-        timezone: TIMEZONE,
-        currency: "HKD",
-        mapListUrl: MAP_LIST_URL
+  function openExpenseDialog() {
+    const dialog = $("#expenseDialog");
+    const form = $("#expenseForm");
+    if (!dialog || !form) return;
+    const active = state.participants.filter((person) => person.active);
+    if (!active.length) {
+      showToast("참가자를 먼저 추가해 주세요", true);
+      return;
+    }
+    form.reset();
+    clearPendingReceipt();
+    renderExpensePeople();
+    $("#expenseDate").value = state.ui.activeDate;
+    $("#expenseCurrency").value = "HKD";
+    renderRate();
+    dialog.showModal();
+    window.setTimeout(() => $("#expenseDescription")?.focus(), 50);
+  }
+
+  function clearPendingReceipt() {
+    pendingReceiptFile = null;
+    if (pendingReceiptUrl) URL.revokeObjectURL(pendingReceiptUrl);
+    pendingReceiptUrl = "";
+    const preview = $("#receiptPreview");
+    if (preview) {
+      preview.replaceChildren(createElement("span", "", "＋"), createElement("p", "", "사진 촬영 또는 파일 선택"));
+    }
+    if ($("#receiptInput")) $("#receiptInput").value = "";
+  }
+
+  function previewReceipt(file) {
+    clearPendingReceipt();
+    if (!file) return;
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      showToast("JPG, PNG, WebP 이미지만 첨부할 수 있습니다", true);
+      return;
+    }
+    if (file.size > 8 * 1024 * 1024) {
+      showToast("8MB 이하 이미지를 선택해 주세요", true);
+      return;
+    }
+    pendingReceiptFile = file;
+    pendingReceiptUrl = URL.createObjectURL(file);
+    const preview = $("#receiptPreview");
+    if (!preview) return;
+    const image = createElement("img");
+    image.src = pendingReceiptUrl;
+    image.alt = "선택한 영수증 미리보기";
+    const copy = createElement("div");
+    copy.append(createElement("strong", "", file.name.slice(0, 60)), createElement("small", "", `${(file.size / 1024 / 1024).toFixed(1)}MB · 저장 시 자동 축소`));
+    preview.replaceChildren(image, copy);
+  }
+
+  async function loadImageSource(file) {
+    if ("createImageBitmap" in window) {
+      try {
+        return await createImageBitmap(file);
+      } catch (error) {
+        console.info("이미지 비트맵 변환을 사용할 수 없어 일반 이미지 방식으로 전환합니다.", error);
       }
-    };
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "hong-kong-trip-2026-08-15.json";
-    document.body.append(link);
-    link.click();
-    link.remove();
-    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-    showToast("여행 백업 파일을 만들었어요");
+    }
+    const url = URL.createObjectURL(file);
+    try {
+      return await new Promise((resolve, reject) => {
+        const image = new Image();
+        image.onload = () => resolve(image);
+        image.onerror = reject;
+        image.src = url;
+      });
+    } finally {
+      URL.revokeObjectURL(url);
+    }
+  }
+
+  async function compressReceipt(file) {
+    const source = await loadImageSource(file);
+    const width = source.width;
+    const height = source.height;
+    if (!width || !height) throw new Error("이미지를 읽을 수 없습니다.");
+    const maxSide = 1600;
+    const scale = Math.min(1, maxSide / Math.max(width, height));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(width * scale));
+    canvas.height = Math.max(1, Math.round(height * scale));
+    const context = canvas.getContext("2d", { alpha: false });
+    if (!context) throw new Error("이미지를 처리할 수 없습니다.");
+    context.fillStyle = "#ffffff";
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.drawImage(source, 0, 0, canvas.width, canvas.height);
+    if (typeof source.close === "function") source.close();
+    const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", .8));
+    if (!blob) throw new Error("이미지를 압축하지 못했습니다.");
+    return blob;
+  }
+
+  function openReceiptDB() {
+    return new Promise((resolve, reject) => {
+      if (!("indexedDB" in window)) {
+        reject(new Error("IndexedDB unavailable"));
+        return;
+      }
+      const request = indexedDB.open(DB_NAME, 1);
+      request.onupgradeneeded = () => {
+        const db = request.result;
+        if (!db.objectStoreNames.contains(DB_STORE)) db.createObjectStore(DB_STORE, { keyPath: "expenseId" });
+      };
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error || new Error("DB open failed"));
+    });
+  }
+
+  async function withReceiptStore(mode, operation) {
+    const db = await openReceiptDB();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(DB_STORE, mode);
+      const store = transaction.objectStore(DB_STORE);
+      let result;
+      try { result = operation(store); } catch (error) { db.close(); reject(error); return; }
+      transaction.oncomplete = () => { db.close(); resolve(result); };
+      transaction.onerror = () => { db.close(); reject(transaction.error || new Error("DB transaction failed")); };
+      transaction.onabort = () => { db.close(); reject(transaction.error || new Error("DB transaction aborted")); };
+    });
+  }
+
+  async function putReceipt(expenseId, blob, name = "receipt.jpg") {
+    return withReceiptStore("readwrite", (store) => store.put({ expenseId, blob, name: cleanText(name, 100) || "receipt.jpg", type: blob.type, updatedAt: new Date().toISOString() }));
+  }
+
+  async function getReceipt(expenseId) {
+    const db = await openReceiptDB();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(DB_STORE, "readonly");
+      const request = transaction.objectStore(DB_STORE).get(expenseId);
+      request.onsuccess = () => resolve(request.result || null);
+      request.onerror = () => reject(request.error || new Error("Receipt read failed"));
+      transaction.oncomplete = () => db.close();
+    });
+  }
+
+  async function deleteReceipt(expenseId) {
+    return withReceiptStore("readwrite", (store) => store.delete(expenseId));
+  }
+
+  async function getAllReceipts() {
+    const db = await openReceiptDB();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(DB_STORE, "readonly");
+      const request = transaction.objectStore(DB_STORE).getAll();
+      request.onsuccess = () => resolve(Array.isArray(request.result) ? request.result : []);
+      request.onerror = () => reject(request.error || new Error("Receipt list failed"));
+      transaction.oncomplete = () => db.close();
+    });
+  }
+
+  async function clearReceipts() {
+    return withReceiptStore("readwrite", (store) => store.clear());
+  }
+
+  async function showReceipt(expenseId) {
+    try {
+      const record = await getReceipt(expenseId);
+      if (!record || !record.blob) {
+        showToast("저장된 영수증을 찾지 못했습니다", true);
+        return;
+      }
+      if (receiptDialogUrl) URL.revokeObjectURL(receiptDialogUrl);
+      receiptDialogUrl = URL.createObjectURL(record.blob);
+      $("#receiptFullImage").src = receiptDialogUrl;
+      $("#receiptCaption").textContent = record.name || "영수증";
+      $("#receiptDialog").showModal();
+    } catch (error) {
+      console.warn("영수증을 열지 못했습니다.", error);
+      showToast("영수증을 열지 못했습니다", true);
+    }
+  }
+
+  function closeReceipt() {
+    closeDialog("#receiptDialog");
+    if (receiptDialogUrl) URL.revokeObjectURL(receiptDialogUrl);
+    receiptDialogUrl = "";
+    if ($("#receiptFullImage")) $("#receiptFullImage").removeAttribute("src");
+  }
+
+  async function addExpense(event) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const formData = new FormData(form);
+    const description = cleanText(formData.get("description"), 80);
+    const amount = Number(formData.get("amount"));
+    const currency = VALID_CURRENCIES.has(formData.get("currency")) ? formData.get("currency") : "HKD";
+    const payerId = cleanText(formData.get("payer"), 100);
+    const splitIds = [...new Set(formData.getAll("splitWith").filter((id) => personById(id)?.active))];
+    const rate = currentRate();
+    if (!description || !Number.isFinite(amount) || amount <= 0) {
+      showToast("항목과 금액을 확인해 주세요", true);
+      return;
+    }
+    if (!personById(payerId)?.active || !splitIds.length) {
+      showToast("결제자와 분담자를 선택해 주세요", true);
+      return;
+    }
+    if (currency === "HKD" && !rate) {
+      showToast("환율을 불러온 뒤 다시 저장해 주세요", true);
+      fetchRate(true);
+      return;
+    }
+    const amountMinor = currency === "HKD" ? Math.round(amount * 100) : Math.round(amount);
+    if (!Number.isSafeInteger(amountMinor) || amountMinor <= 0) {
+      showToast("금액이 너무 크거나 올바르지 않습니다", true);
+      return;
+    }
+    const expenseId = makeId("expense");
+    const submit = $("#expenseSubmit");
+    submit.disabled = true;
+    submit.textContent = pendingReceiptFile ? "사진 저장 중" : "저장 중";
+    let receiptSaved = false;
+    try {
+      if (pendingReceiptFile) {
+        const blob = await compressReceipt(pendingReceiptFile);
+        await putReceipt(expenseId, blob, pendingReceiptFile.name);
+        receiptSaved = true;
+      }
+      const fxRateMicros = currency === "HKD" ? Math.round(rate * 1_000_000) : 0;
+      state.expenses.push({
+        id: expenseId,
+        date: /^\d{4}-\d{2}-\d{2}$/.test(formData.get("date")) ? formData.get("date") : START_DATE,
+        category: VALID_CATEGORIES.has(formData.get("category")) ? formData.get("category") : "기타",
+        description,
+        currency,
+        amountMinor,
+        baseAmountKRW: currency === "KRW" ? amountMinor : convertToKRW(amountMinor, fxRateMicros),
+        fxRateMicros,
+        payerId,
+        split: { mode: "equal", participantIds: splitIds },
+        receiptId: receiptSaved ? expenseId : "",
+        createdAt: new Date().toISOString()
+      });
+      saveState(false);
+      closeDialog("#expenseDialog");
+      clearPendingReceipt();
+      renderSettlement();
+      showToast("지출을 저장했습니다");
+    } catch (error) {
+      console.warn("지출 또는 영수증을 저장하지 못했습니다.", error);
+      if (receiptSaved) await deleteReceipt(expenseId).catch(() => {});
+      showToast("영수증 저장에 실패했습니다", true);
+    } finally {
+      submit.disabled = false;
+      submit.textContent = "저장";
+    }
+  }
+
+  function removeParticipant(id) {
+    const person = personById(id);
+    if (!person || !person.active) return;
+    if (state.participants.filter((entry) => entry.active).length <= 1) {
+      showToast("참가자는 한 명 이상 필요합니다", true);
+      return;
+    }
+    const referenced = state.expenses.some((expense) => expense.payerId === id || expense.split.participantIds.includes(id));
+    if (referenced) {
+      person.active = false;
+      showToast("이전 지출은 유지하고 새 정산에서 제외했습니다");
+    } else {
+      state.participants = state.participants.filter((entry) => entry.id !== id);
+      showToast("참가자를 삭제했습니다");
+    }
+    saveState(false);
+    renderSettlement();
+  }
+
+  async function deleteExpense(id) {
+    const expense = state.expenses.find((item) => item.id === id);
+    if (!expense || !window.confirm(`${expense.description} 지출을 삭제할까요?`)) return;
+    state.expenses = state.expenses.filter((item) => item.id !== id);
+    if (expense.receiptId) await deleteReceipt(id).catch((error) => console.warn("영수증 삭제 실패", error));
+    saveState(false);
+    renderSettlement();
+    showToast("지출을 삭제했습니다");
+  }
+
+  function blobToDataUrl(blob) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(reader.error || new Error("File read failed"));
+      reader.readAsDataURL(blob);
+    });
+  }
+
+  function dataUrlToBlob(dataUrl) {
+    if (typeof dataUrl !== "string" || dataUrl.length > 30_000_000) throw new Error("Invalid receipt data");
+    const match = dataUrl.match(/^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/);
+    if (!match) throw new Error("Invalid receipt format");
+    const binary = atob(match[2]);
+    const bytes = new Uint8Array(binary.length);
+    for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
+    return new Blob([bytes], { type: match[1] });
+  }
+
+  async function exportData() {
+    try {
+      const records = await getAllReceipts().catch(() => []);
+      const receipts = [];
+      for (const record of records) {
+        receipts.push({ expenseId: record.expenseId, name: record.name, type: record.type, dataUrl: await blobToDataUrl(record.blob) });
+      }
+      const payload = { appId: "trip-hongkong", formatVersion: 2, exportedAt: new Date().toISOString(), state, receipts };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const link = createElement("a");
+      link.href = url;
+      link.download = "hong-kong-trip-backup.json";
+      document.body.append(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+      showToast("백업 파일을 만들었습니다");
+    } catch (error) {
+      console.warn("백업 실패", error);
+      showToast("백업 파일을 만들지 못했습니다", true);
+    }
   }
 
   async function importData(file) {
     if (!file) return;
-    if (file.size > 1024 * 1024) {
-      showToast("1MB 이하의 JSON 파일만 불러올 수 있어요", true);
+    if (file.size > 30 * 1024 * 1024) {
+      showToast("30MB 이하 백업 파일만 불러올 수 있습니다", true);
       return;
     }
     try {
-      const text = await file.text();
-      const incoming = sanitizeState(JSON.parse(text));
-      if (!window.confirm("현재 저장 내용을 백업 파일의 내용으로 바꿀까요?")) return;
+      const parsed = JSON.parse(await file.text());
+      if (parsed.appId && parsed.appId !== "trip-hongkong") throw new Error("Wrong app backup");
+      const incoming = sanitizeState(parsed.state || parsed);
+      const receiptRows = Array.isArray(parsed.receipts) ? parsed.receipts.slice(0, 1000) : [];
+      if (!window.confirm("현재 내용을 백업 파일의 내용으로 바꿀까요?")) return;
+      await clearReceipts().catch(() => {});
+      const expenseIds = new Set(incoming.expenses.map((expense) => expense.id));
+      for (const row of receiptRows) {
+        if (!row || !expenseIds.has(row.expenseId)) continue;
+        const blob = dataUrlToBlob(row.dataUrl);
+        await putReceipt(row.expenseId, blob, cleanText(row.name, 100) || "receipt.jpg");
+      }
       state = incoming;
       saveState(false);
-      renderAll();
-      showToast("백업 내용을 불러왔어요");
-      fetchWeather(false);
+      renderPage();
+      showToast("백업을 불러왔습니다");
     } catch (error) {
-      console.warn("백업 파일을 불러오지 못했습니다.", error);
-      showToast("올바른 여행 백업 파일인지 확인해 주세요", true);
+      console.warn("백업 불러오기 실패", error);
+      showToast("올바른 백업 파일인지 확인해 주세요", true);
     } finally {
-      const input = $("#importFile");
-      if (input) input.value = "";
+      if ($("#importFile")) $("#importFile").value = "";
     }
+  }
+
+  async function resetSettlement() {
+    if (!window.confirm("참가자, 지출과 영수증을 모두 초기화할까요?")) return;
+    const fresh = defaultState();
+    state.participants = fresh.participants;
+    state.expenses = [];
+    await clearReceipts().catch(() => {});
+    saveState(false);
+    renderSettlement();
+    showToast("정산을 초기화했습니다");
   }
 
   async function copyText(text) {
     try {
       await navigator.clipboard.writeText(text);
-      showToast("주소를 복사했어요");
+      showToast("주소를 복사했습니다");
     } catch (error) {
-      const helper = document.createElement("textarea");
+      const helper = createElement("textarea");
       helper.value = text;
       helper.style.position = "fixed";
       helper.style.opacity = "0";
@@ -745,191 +1291,155 @@
       helper.select();
       const copied = document.execCommand("copy");
       helper.remove();
-      showToast(copied ? "주소를 복사했어요" : "주소 복사를 다시 시도해 주세요", !copied);
+      showToast(copied ? "주소를 복사했습니다" : "주소 복사에 실패했습니다", !copied);
     }
   }
 
-  function resetData() {
-    if (!window.confirm("체크, 일정, 지출과 메모를 모두 처음 상태로 되돌릴까요? 이 작업은 되돌릴 수 없습니다.")) return;
-    state = sanitizeState(null);
-    localStorage.removeItem(STORAGE_KEY);
-    saveState(false);
-    renderAll();
-    showToast("처음 상태로 되돌렸어요");
-    fetchWeather(true);
-  }
-
-  function handleDocumentClick(event) {
-    const phaseButton = event.target.closest("[data-phase]");
-    if (phaseButton) {
-      setPhase(phaseButton.dataset.phase, { scroll: phaseButton.closest(".mobile-phase-nav") !== null });
-      return;
-    }
-
+  function handleClick(event) {
     const dateButton = event.target.closest(".day-tab[data-date]");
     if (dateButton) {
       setActiveDate(dateButton.dataset.date);
       return;
     }
-
-    const actionButton = event.target.closest("[data-action]");
-    if (actionButton) {
-      const action = actionButton.dataset.action;
-      if (action === "refresh-weather") fetchWeather(true);
-      if (action === "print") window.print();
-      if (action === "export") exportData();
-      if (action === "reset") resetData();
-      if (action === "add-place") addPlaceToItinerary(Number(actionButton.dataset.index));
-      if (action === "delete-check") {
-        state.checklist = state.checklist.filter((item) => item.id !== actionButton.dataset.id);
-        saveState();
-        renderChecklist("before", "#beforeChecklist");
-        renderChecklist("after", "#afterChecklist");
-        updateProgress();
-      }
-      if (action === "delete-itinerary") {
-        state.itinerary = state.itinerary.filter((item) => item.id !== actionButton.dataset.id);
-        saveState();
-        renderTimeline();
-      }
-      if (action === "delete-expense") {
-        state.expenses = state.expenses.filter((item) => item.id !== actionButton.dataset.id);
-        saveState();
-        renderExpenses();
-      }
+    const copyButton = event.target.closest("[data-copy]");
+    if (copyButton) {
+      copyText(copyButton.dataset.copy);
       return;
     }
-
-    const copyButton = event.target.closest("[data-copy]");
-    if (copyButton) copyText(copyButton.dataset.copy);
+    const button = event.target.closest("[data-action]");
+    if (!button) return;
+    const { action, id } = button.dataset;
+    if (action === "refresh-weather") fetchWeather(true);
+    if (action === "refresh-rate") fetchRate(true);
+    if (action === "add-place") addPlaceToItinerary(Number(button.dataset.index));
+    if (action === "open-itinerary") openItineraryDialog();
+    if (action === "close-itinerary") closeDialog("#itineraryDialog");
+    if (action === "open-expense") openExpenseDialog();
+    if (action === "close-expense") { closeDialog("#expenseDialog"); clearPendingReceipt(); }
+    if (action === "close-receipt") closeReceipt();
+    if (action === "view-receipt") showReceipt(id);
+    if (action === "remove-person") removeParticipant(id);
+    if (action === "delete-expense") deleteExpense(id);
+    if (action === "export") exportData();
+    if (action === "reset-settlement") resetSettlement();
+    if (action === "swap-currency") {
+      converterSource = converterSource === "HKD" ? "KRW" : "HKD";
+      syncConverter(converterSource);
+      (converterSource === "HKD" ? $("#hkdInput") : $("#krwInput"))?.focus();
+    }
+    if (action === "delete-check") {
+      state.checklist = state.checklist.filter((item) => item.id !== id);
+      saveState();
+      renderPrepare();
+    }
+    if (action === "delete-itinerary") {
+      state.itinerary = state.itinerary.filter((item) => item.id !== id);
+      saveState();
+      renderTimeline();
+    }
   }
 
   function bindEvents() {
-    document.addEventListener("click", handleDocumentClick);
-    $$(".phase-tab").forEach((tab) => tab.addEventListener("keydown", handlePhaseKeydown));
-
+    document.addEventListener("click", handleClick);
     document.addEventListener("change", (event) => {
       const checkbox = event.target.closest("[data-check-id]");
       if (checkbox) {
         const item = state.checklist.find((entry) => entry.id === checkbox.dataset.checkId);
         if (item) item.done = checkbox.checked;
         saveState();
-        renderChecklist("before", "#beforeChecklist");
-        renderChecklist("after", "#afterChecklist");
-        updateProgress();
+        renderPrepare();
       }
     });
 
-    const hideCompleted = $("#hideCompleted");
-    if (hideCompleted) {
-      hideCompleted.addEventListener("change", () => {
-        state.ui.hideCompleted = hideCompleted.checked;
-        saveState(false);
-        renderChecklist("before", "#beforeChecklist");
-      });
-    }
+    $("#hideCompleted")?.addEventListener("change", (event) => {
+      state.ui.hideCompleted = event.target.checked;
+      saveState(false);
+      renderChecklist();
+    });
 
-    const checklistForm = $("#checklistForm");
-    if (checklistForm) {
-      checklistForm.addEventListener("submit", (event) => {
-        event.preventDefault();
-        const formData = new FormData(checklistForm);
-        const text = cleanText(formData.get("text"), 80);
-        const category = cleanText(formData.get("category"), 40);
-        if (!text) return;
-        state.checklist.push({ id: makeId("check"), phase: "before", category, text, done: false });
-        checklistForm.reset();
-        saveState();
-        renderChecklist("before", "#beforeChecklist");
-        updateProgress();
-        $("#checklistText").focus();
-      });
-    }
+    $("#checklistForm")?.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const formData = new FormData(event.currentTarget);
+      const text = cleanText(formData.get("text"), 80);
+      const category = CHECK_CATEGORIES.includes(formData.get("category")) ? formData.get("category") : "예약·서류";
+      if (!text) return;
+      state.checklist.push({ id: makeId("check"), category, text, done: false });
+      event.currentTarget.reset();
+      saveState();
+      renderPrepare();
+      $("#checklistText")?.focus();
+    });
 
-    const itineraryForm = $("#itineraryForm");
-    if (itineraryForm) {
-      itineraryForm.addEventListener("submit", (event) => {
-        event.preventDefault();
-        const formData = new FormData(itineraryForm);
-        const title = cleanText(formData.get("title"), 80);
-        if (!title) return;
-        state.itinerary.push({
-          id: makeId("plan"),
-          date: VALID_DATES.has(formData.get("date")) ? formData.get("date") : state.ui.activeDate,
-          time: /^([01]\d|2[0-3]):[0-5]\d$/.test(formData.get("time")) ? formData.get("time") : "",
-          title,
-          place: cleanText(formData.get("place"), 100),
-          note: cleanText(formData.get("note"), 160)
-        });
-        itineraryForm.reset();
-        $("#itineraryDate").value = state.ui.activeDate;
-        $("#itineraryDetails").open = false;
-        saveState();
-        renderTimeline();
-      });
-    }
+    $("#itineraryForm")?.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const formData = new FormData(event.currentTarget);
+      const title = cleanText(formData.get("title"), 80);
+      if (!title) return;
+      const date = VALID_DATES.has(formData.get("date")) ? formData.get("date") : state.ui.activeDate;
+      state.itinerary.push({ id: makeId("plan"), date, time: /^([01]\d|2[0-3]):[0-5]\d$/.test(formData.get("time")) ? formData.get("time") : "", title, place: cleanText(formData.get("place"), 100), note: cleanText(formData.get("note"), 180) });
+      state.ui.activeDate = date;
+      saveState(false);
+      closeDialog("#itineraryDialog");
+      renderTrip();
+      showToast("일정을 저장했습니다");
+    });
 
-    const expenseForm = $("#expenseForm");
-    if (expenseForm) {
-      expenseForm.addEventListener("submit", (event) => {
-        event.preventDefault();
-        const formData = new FormData(expenseForm);
-        const description = cleanText(formData.get("description"), 80);
-        const amount = Number(formData.get("amount"));
-        if (!description || !Number.isFinite(amount) || amount <= 0) {
-          showToast("항목과 0보다 큰 금액을 입력해 주세요", true);
-          return;
-        }
-        state.expenses.push({
-          id: makeId("expense"),
-          date: VALID_DATES.has(formData.get("date")) ? formData.get("date") : state.ui.activeDate,
-          category: cleanText(formData.get("category"), 30) || "기타",
-          description,
-          amount: Math.round(amount * 100) / 100
-        });
-        expenseForm.reset();
-        $("#expenseDate").value = state.ui.activeDate;
-        saveState();
-        renderExpenses();
-        $("#expenseDescription").focus();
-      });
-    }
+    $("#personForm")?.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const name = cleanText(new FormData(event.currentTarget).get("name"), 30);
+      if (!name) return;
+      if (state.participants.some((person) => person.active && person.name.toLocaleLowerCase() === name.toLocaleLowerCase())) {
+        showToast("같은 이름의 참가자가 있습니다", true);
+        return;
+      }
+      state.participants.push({ id: makeId("person"), name, active: true, createdAt: new Date().toISOString() });
+      event.currentTarget.reset();
+      saveState(false);
+      renderSettlement();
+      showToast("참가자를 추가했습니다");
+    });
 
-    $$('[data-note-key]').forEach((textarea) => {
-      textarea.addEventListener("input", () => {
-        state.notes[textarea.dataset.noteKey] = textarea.value.slice(0, 500);
-        window.clearTimeout(noteSaveTimer);
-        noteSaveTimer = window.setTimeout(() => saveState(), 450);
+    $("#expenseForm")?.addEventListener("submit", addExpense);
+    $("#receiptInput")?.addEventListener("change", (event) => previewReceipt(event.target.files?.[0]));
+    $("#expenseFilter")?.addEventListener("change", renderExpenseList);
+    $("#hkdInput")?.addEventListener("input", () => { converterSource = "HKD"; syncConverter("HKD"); });
+    $("#krwInput")?.addEventListener("input", () => { converterSource = "KRW"; syncConverter("KRW"); });
+    $("#importFile")?.addEventListener("change", (event) => importData(event.target.files?.[0]));
+
+    $$("dialog").forEach((dialog) => {
+      dialog.addEventListener("click", (event) => {
+        if (event.target !== dialog) return;
+        if (dialog.id === "receiptDialog") closeReceipt();
+        else { dialog.close(); if (dialog.id === "expenseDialog") clearPendingReceipt(); }
       });
     });
 
-    const importFile = $("#importFile");
-    if (importFile) importFile.addEventListener("change", () => importData(importFile.files && importFile.files[0]));
+    $("#daySwitcher")?.addEventListener("keydown", (event) => {
+      if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+      event.preventDefault();
+      const current = TRIP_DAYS.findIndex((day) => day.date === state.ui.activeDate);
+      let next = current;
+      if (event.key === "ArrowLeft") next = (current - 1 + TRIP_DAYS.length) % TRIP_DAYS.length;
+      if (event.key === "ArrowRight") next = (current + 1) % TRIP_DAYS.length;
+      if (event.key === "Home") next = 0;
+      if (event.key === "End") next = TRIP_DAYS.length - 1;
+      setActiveDate(TRIP_DAYS[next].date, true);
+    });
 
     window.addEventListener("storage", (event) => {
-      if (event.key === STORAGE_KEY && event.newValue) {
-        try {
-          state = sanitizeState(JSON.parse(event.newValue));
-          renderAll();
-          showToast("다른 탭의 변경 내용을 반영했어요");
-        } catch (error) {
-          console.warn("다른 탭의 데이터를 반영하지 못했습니다.", error);
-        }
-      }
-    });
-
-    document.addEventListener("visibilitychange", () => {
-      if (document.visibilityState === "visible") {
-        updateCountdown();
-        updateHongKongTime();
-        fetchWeather(false);
+      if (event.key !== STORAGE_KEY || !event.newValue) return;
+      try {
+        state = sanitizeState(JSON.parse(event.newValue));
+        renderPage();
+        showToast("다른 탭의 변경을 반영했습니다");
+      } catch (error) {
+        console.warn("다른 탭 데이터를 반영하지 못했습니다.", error);
       }
     });
   }
 
-  renderAll();
+  renderPage();
   bindEvents();
-  fetchWeather(false);
-  window.setInterval(updateHongKongTime, 30000);
-  window.setInterval(updateCountdown, 15 * 60 * 1000);
+  if (PAGE === "home" || PAGE === "trip") fetchWeather(false);
+  if (PAGE === "home" || PAGE === "settle") fetchRate(false);
 })();
