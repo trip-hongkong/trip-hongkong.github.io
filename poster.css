@@ -1953,3 +1953,46 @@ html[data-theme="dark"] { scrollbar-color: #48484a #1c1c1e; }
     box-shadow: 0 -10px 24px rgba(0, 0, 0, .24);
   }
 }
+
+/* Neutral Apple-style utility cards.
+   Full color belongs to the photographic hero; app cards use color only as an accent. */
+html[data-theme] .calm-ui .hotel-card,
+html[data-theme] .calm-ui .mobile-next-card,
+html[data-theme] .calm-ui .settlement-summary .summary-balance {
+  color: var(--ink);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-small);
+}
+
+html[data-theme] .calm-ui .hotel-card .hotel-topline,
+html[data-theme] .calm-ui .hotel-card > p,
+html[data-theme] .calm-ui .hotel-facts small,
+html[data-theme] .calm-ui .mobile-next-time small,
+html[data-theme] .calm-ui .mobile-next-copy p,
+html[data-theme] .calm-ui .settlement-summary .summary-balance span,
+html[data-theme] .calm-ui .settlement-summary .summary-balance small { color: var(--muted); }
+
+html[data-theme] .calm-ui .hotel-card h3,
+html[data-theme] .calm-ui .hotel-facts b,
+html[data-theme] .calm-ui .mobile-next-time strong,
+html[data-theme] .calm-ui .mobile-next-copy h3,
+html[data-theme] .calm-ui .settlement-summary .summary-balance strong { color: var(--ink); }
+
+html[data-theme] .calm-ui .hotel-facts,
+html[data-theme] .calm-ui .hotel-facts span + span { border-color: var(--line); }
+html[data-theme] .calm-ui .mobile-next-copy > span,
+html[data-theme] .calm-ui .mobile-next-card > a { color: var(--red-dark); }
+
+html[data-theme] .calm-ui .hotel-card .primary-button,
+html[data-theme="dark"] .calm-ui .primary-button,
+html[data-theme="dark"] .calm-ui .dark-button {
+  color: #fff;
+  background: #b72e35;
+  border-color: #b72e35;
+}
+html[data-theme] .calm-ui .hotel-card .secondary-button {
+  color: var(--ink-soft);
+  background: var(--paper-warm);
+  border-color: transparent;
+}
