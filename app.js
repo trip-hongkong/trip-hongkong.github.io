@@ -1696,7 +1696,10 @@
       tabs[next].focus();
     });
 
-    window.addEventListener("hashchange", () => activateSection(sectionFromHash(), false, false));
+    window.addEventListener("hashchange", () => {
+      const section = window.location.hash.replace(/^#/, "");
+      if (SECTIONS.has(section)) activateSection(section, false, false);
+    });
     THEME_MEDIA.addEventListener?.("change", () => {
       if (themePreference() === "system") applyTheme("system", false);
     });
@@ -1723,7 +1726,7 @@
   if (PAGE === "all") {
     const initialSection = sectionFromHash();
     activateSection(initialSection, false, false);
-    if (window.matchMedia("(max-width: 760px)").matches && ["trip", "settle"].includes(window.location.hash.slice(1))) {
+    if (window.matchMedia("(max-width: 760px)").matches && SECTIONS.has(window.location.hash.slice(1))) {
       const behavior = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
       window.requestAnimationFrame(() => $(`.phase-panel[data-panel="${initialSection}"]`)?.scrollIntoView({ behavior, block: "start" }));
     }
