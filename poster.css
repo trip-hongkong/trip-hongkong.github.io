@@ -2477,3 +2477,144 @@ html[data-theme="dark"] .calm-ui .checklist-owner-option input:checked + .checkl
   .calm-ui .check-item-actions { gap: 4px; }
   .calm-ui .check-item-link { min-width: 44px; min-height: 44px; padding-inline: 8px; }
 }
+
+/* Shared trip room. The small status lives in the existing chrome; joining uses
+   one focused sheet so it does not add another competing dashboard block. */
+.calm-ui .cloud-status-button {
+  display: inline-flex;
+  min-width: 76px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  white-space: nowrap;
+}
+.calm-ui .cloud-status-button i,
+.calm-ui .cloud-data-status i {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 auto;
+  background: #ffd60a;
+  border-radius: 50%;
+  box-shadow: 0 0 0 3px rgba(255, 214, 10, .16);
+}
+.calm-ui .cloud-status-button[data-status="synced"] i,
+.calm-ui .cloud-status-button[data-status="syncing"] i,
+.calm-ui:has(.cloud-status-button[data-status="synced"]) .cloud-data-status i,
+.calm-ui:has(.cloud-status-button[data-status="syncing"]) .cloud-data-status i {
+  background: #30d158;
+  box-shadow: 0 0 0 3px rgba(48, 209, 88, .16);
+}
+.calm-ui .cloud-status-button[data-status="offline"] i,
+.calm-ui:has(.cloud-status-button[data-status="offline"]) .cloud-data-status i {
+  background: #ff9f0a;
+  box-shadow: 0 0 0 3px rgba(255, 159, 10, .16);
+}
+.calm-ui .cloud-status-button[data-status="error"] i,
+.calm-ui:has(.cloud-status-button[data-status="error"]) .cloud-data-status i {
+  background: #ff453a;
+  box-shadow: 0 0 0 3px rgba(255, 69, 58, .16);
+}
+.calm-ui .cloud-data-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.calm-ui .cloud-join-overlay {
+  position: fixed;
+  z-index: 300;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: max(20px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(20px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  background: rgba(0, 0, 0, .48);
+  backdrop-filter: blur(18px) saturate(120%);
+}
+.calm-ui .cloud-join-overlay[hidden] { display: none !important; }
+.calm-ui:has(.cloud-join-overlay:not([hidden])) { overflow: hidden; }
+.calm-ui .cloud-join-card {
+  position: relative;
+  width: min(100%, 440px);
+  padding: 30px;
+  color: var(--ink);
+  background: rgba(255, 255, 255, .96);
+  border: 1px solid rgba(255, 255, 255, .56);
+  border-radius: 28px;
+  box-shadow: 0 30px 90px rgba(0, 0, 0, .30);
+}
+.calm-ui .cloud-join-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 44px;
+  height: 44px;
+  color: var(--muted);
+  background: var(--paper-warm);
+  border: 0;
+  border-radius: 50%;
+  font-size: 23px;
+}
+.calm-ui .cloud-join-icon {
+  display: grid;
+  width: 54px;
+  height: 54px;
+  margin-bottom: 22px;
+  place-items: center;
+  color: #fff;
+  background: var(--accent);
+  border-radius: 18px;
+  box-shadow: 0 10px 24px rgba(0, 102, 204, .22);
+  font-size: 14px;
+  font-weight: 850;
+  letter-spacing: -.04em;
+}
+.calm-ui .cloud-join-card h2 { margin: 5px 0 10px; font-size: 30px; letter-spacing: -.045em; }
+.calm-ui .cloud-join-card > p:not(.card-label) { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.65; }
+.calm-ui .cloud-join-card > p.is-error { color: #d70015; }
+.calm-ui .cloud-join-card > small { display: block; margin-top: 16px; color: var(--muted); font-size: 10px; text-align: center; }
+.calm-ui .cloud-join-form { display: grid; gap: 13px; margin-top: 24px; }
+.calm-ui .cloud-join-form label { display: grid; gap: 7px; }
+.calm-ui .cloud-join-form label > span { color: var(--ink-soft); font-size: 11px; font-weight: 700; }
+.calm-ui .cloud-join-form input,
+.calm-ui .cloud-join-form select { width: 100%; min-height: 50px; padding: 0 14px; font-size: 16px; }
+.calm-ui .cloud-join-form .primary-button {
+  width: 100%;
+  min-height: 50px;
+  margin-top: 5px;
+  color: #fff;
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+html[data-theme="dark"] .calm-ui .cloud-join-card {
+  background: rgba(28, 28, 30, .97);
+  border-color: rgba(255, 255, 255, .12);
+}
+html[data-theme="dark"] .calm-ui .cloud-join-close { background: #3a3a3c; }
+html[data-theme="dark"] .calm-ui .cloud-join-card > p.is-error { color: #ff6961; }
+
+@media (max-width: 520px) {
+  .calm-ui .cloud-status-button { min-width: 62px; padding-inline: 10px; }
+  .calm-ui .cloud-join-overlay { align-items: end; padding: 0; }
+  .calm-ui .cloud-join-card {
+    width: 100%;
+    max-height: calc(100dvh - env(safe-area-inset-top) - 8px);
+    padding: 25px 20px calc(22px + env(safe-area-inset-bottom));
+    overflow-y: auto;
+    border-right: 0;
+    border-bottom: 0;
+    border-left: 0;
+    border-radius: 28px 28px 0 0;
+  }
+  .calm-ui .cloud-join-card h2 { font-size: 27px; }
+  .calm-ui .cloud-join-icon { width: 48px; height: 48px; margin-bottom: 18px; border-radius: 16px; }
+}
+
+@media (max-width: 340px) {
+  .calm-ui .wordmark > span:last-child { display: none; }
+  .calm-ui .cloud-status-button { min-width: 44px; width: 44px; padding: 0; }
+  .calm-ui .cloud-status-button span { display: none; }
+}
