@@ -25,6 +25,7 @@
   const ITINERARY_MIGRATION = "confirmed-trip-plan-v1";
   const PLACEHOLDER_CLEANUP_MIGRATION = "legacy-placeholder-cleanup-v1";
   const CHECKLIST_SCOPE_MIGRATION = "personal-checklists-v1";
+  const CHECKLIST_TASKS_MIGRATION = "practical-checklists-v2";
   const VALID_PLAN_STATUSES = new Set(["confirmed", "recommended", "flexible", "custom"]);
   const LEGACY_PLACEHOLDERS = [
     { id: "seed-arrival", date: "2026-08-15", time: "", title: "홍콩 도착", place: "", note: "항공편 확정 후 도착 시각과 이동 방법 입력" },
@@ -68,12 +69,37 @@
     { id: "junhyuk", label: "준혁" }
   ];
   const CHECK_OWNER_IDS = new Set(CHECKLIST_OWNERS.map((owner) => owner.id));
-  const CHECK_CATEGORIES = ["예약·서류", "통신·결제", "위탁 수하물", "기내 수하물"];
-  const PERSONAL_PACKING_TEMPLATES = [
+  const COMMON_CHECK_CATEGORIES = ["예약·티켓", "교통·이동", "함께 준비"];
+  const PERSONAL_CHECK_CATEGORIES = ["개인 준비", "위탁 수하물", "기내 수하물"];
+  const CHECK_CATEGORIES = [...COMMON_CHECK_CATEGORIES, ...PERSONAL_CHECK_CATEGORIES];
+  const COMMON_CHECKLIST_TEMPLATES = [
+    { id: "before-flight", category: "예약·티켓", text: "CX413·CX430 항공편 예약 내용 확인", done: true },
+    { id: "before-hotel", category: "예약·티켓", text: "홍콩·마카오 숙소 예약 내용 확인", done: true },
+    { id: "common-disney", category: "예약·티켓", text: "홍콩 디즈니랜드 방문일 정하고 4명 예매", url: "https://www.hongkongdisneyland.com/book/tickets/", linkLabel: "예매", done: false },
+    { id: "common-hk-restaurant", category: "예약·티켓", text: "홍콩 식당 후보 찾기", url: "https://www.openrice.com/en/hongkong", linkLabel: "후보", done: false },
+    { id: "common-macau-restaurant", category: "예약·티켓", text: "마카오 식당 후보 찾기", url: "https://www.openrice.com/en/macau", linkLabel: "후보", done: false },
+    { id: "common-gold-bus", category: "교통·이동", text: "8/18 홍콩 → 마카오 금바 예매", url: "https://i.hzmbus.com/webhtml/index.html", linkLabel: "예매", done: false },
+    { id: "common-airport-bus", category: "교통·이동", text: "8/19 마카오 → 홍콩공항 직행버스 4명 예매", url: "https://ticket.macauhkairportbus.com/", linkLabel: "예매", done: false },
+    { id: "before-map", category: "함께 준비", text: "공유 지도에 갈 곳 최종 정리", url: "https://maps.app.goo.gl/c4aqxDU5yhHmMNfu5?g_st=ac", linkLabel: "지도", done: true },
+    { id: "common-restaurant-links", category: "함께 준비", text: "선택한 식당 예약 링크 등록하기", done: false },
+    { id: "common-share-confirmations", category: "함께 준비", text: "예약 확인서·QR을 4명에게 공유", done: false },
+    { id: "common-online-checkin", category: "함께 준비", text: "출발 48시간 전 4명 온라인 체크인", url: "https://www.cathaypacific.com/mb/#/en_HK/login", linkLabel: "체크인", done: false }
+  ];
+  const PERSONAL_CHECKLIST_TEMPLATES = [
+    { key: "passport", category: "개인 준비", text: "여권 유효기간·영문 이름 확인" },
+    { key: "insurance", category: "개인 준비", text: "여행자보험 가입" },
+    { key: "esim", category: "개인 준비", text: "eSIM 또는 로밍 준비" },
+    { key: "payment", category: "개인 준비", text: "해외결제 카드·현금 준비" },
     { key: "clothes", category: "위탁 수하물", text: "여벌 옷 · 속옷 · 양말" },
-    { key: "toiletries", category: "위탁 수하물", text: "세면도구 · 개인용품" },
+    { key: "toiletries", category: "위탁 수하물", text: "세면도구 · 100ml 초과 액체" },
+    { key: "shoes", category: "위탁 수하물", text: "여벌 신발 · 개인용품" },
     { key: "essentials", category: "기내 수하물", text: "여권 · 지갑 · 휴대폰" },
-    { key: "power", category: "기내 수하물", text: "충전기 · 보조배터리 · 개인 약" }
+    { key: "documents", category: "기내 수하물", text: "탑승권 · 예약 QR 오프라인 저장" },
+    { key: "charger", category: "기내 수하물", text: "충전기 · BF형 어댑터" },
+    { key: "battery", category: "기내 수하물", text: "보조배터리 최대 2개 · 기내 휴대" },
+    { key: "medicine", category: "기내 수하물", text: "상비약 · 개인 약" },
+    { key: "liquids", category: "기내 수하물", text: "100ml 이하 액체 · 지퍼백" },
+    { key: "rain", category: "기내 수하물", text: "접이식 우산 · 우비" }
   ];
   const VALID_DATES = new Set(TRIP_DAYS.map((day) => day.date));
   const VALID_CURRENCIES = new Set(["HKD", "KRW"]);
@@ -125,23 +151,9 @@
 
   function defaultState() {
     return {
-      schemaVersion: 4,
-      meta: { appliedMigrations: [ITINERARY_MIGRATION, PLACEHOLDER_CLEANUP_MIGRATION, CHECKLIST_SCOPE_MIGRATION] },
-      checklist: [
-        { id: "before-flight", ownerId: "common", category: "예약·서류", text: "항공편과 수하물 규정 확인", done: true },
-        { id: "before-hotel", ownerId: "common", category: "예약·서류", text: "숙소 예약·체크인 정보 확인", done: true },
-        { id: "before-passport", ownerId: "common", category: "예약·서류", text: "여권 유효기간과 영문 이름 확인", done: false },
-        { id: "before-insurance", ownerId: "common", category: "예약·서류", text: "여행자 보험 가입", done: false },
-        { id: "before-esim", ownerId: "common", category: "통신·결제", text: "eSIM 또는 로밍 준비", done: false },
-        { id: "before-payment", ownerId: "common", category: "통신·결제", text: "해외 결제 카드와 현금 준비", done: false },
-        { id: "before-map", ownerId: "common", category: "통신·결제", text: "Google 지도 저장 목록 확인", done: true },
-        { id: "before-hotel-map", ownerId: "common", category: "통신·결제", text: "Royal Plaza Hotel 지도 저장", done: true },
-        { id: "before-adapter", ownerId: "common", category: "기내 수하물", text: "BF형 어댑터와 충전기", done: false },
-        { id: "before-rain", ownerId: "common", category: "기내 수하물", text: "작은 우산 또는 우비", done: false },
-        { id: "before-medicine", ownerId: "common", category: "기내 수하물", text: "상비약과 개인 약", done: false },
-        { id: "before-shoes", ownerId: "common", category: "위탁 수하물", text: "걷기 편한 신발", done: false },
-        ...personalChecklistSeeds()
-      ],
+      schemaVersion: 5,
+      meta: { appliedMigrations: [ITINERARY_MIGRATION, PLACEHOLDER_CLEANUP_MIGRATION, CHECKLIST_SCOPE_MIGRATION, CHECKLIST_TASKS_MIGRATION] },
+      checklist: checklistSeeds(),
       itinerary: TRIP_ITINERARY.map((item) => ({ ...item })),
       participants: [
         { id: "person-me", name: "나", active: true, createdAt: new Date().toISOString() },
@@ -156,16 +168,29 @@
     };
   }
 
+  function commonChecklistSeeds() {
+    return COMMON_CHECKLIST_TEMPLATES.map((item) => ({ ...item, ownerId: "common" }));
+  }
+
+  function personalChecklistId(ownerId, item) {
+    const prefix = item.category === "개인 준비" ? "personal" : item.category === "위탁 수하물" ? "packing" : "carry";
+    return `${prefix}-${ownerId}-${item.key}`;
+  }
+
   function personalChecklistSeeds() {
     return CHECKLIST_OWNERS.filter((owner) => owner.id !== "common").flatMap((owner) => (
-      PERSONAL_PACKING_TEMPLATES.map((item) => ({
-        id: `packing-${owner.id}-${item.key}`,
+      PERSONAL_CHECKLIST_TEMPLATES.map((item) => ({
+        id: personalChecklistId(owner.id, item),
         ownerId: owner.id,
         category: item.category,
         text: item.text,
         done: false
       }))
     ));
+  }
+
+  function checklistSeeds() {
+    return [...commonChecklistSeeds(), ...personalChecklistSeeds()];
   }
 
   function makeId(prefix) {
@@ -177,12 +202,35 @@
     return typeof value === "string" ? value.trim().replace(/\s+/g, " ").slice(0, maxLength) : "";
   }
 
-  function normalizeCheckCategory(category, id = "") {
+  function cleanChecklistUrl(value) {
+    const text = cleanText(value, 600);
+    if (!text) return "";
+    try {
+      const url = new URL(text);
+      return url.protocol === "https:" || url.protocol === "http:" ? url.href : "";
+    } catch (error) {
+      return "";
+    }
+  }
+
+  function checklistCategoriesForOwner(ownerId) {
+    return ownerId === "common" ? COMMON_CHECK_CATEGORIES : PERSONAL_CHECK_CATEGORIES;
+  }
+
+  function normalizeCheckCategory(category, id = "", ownerId = "common") {
     if (CHECK_CATEGORIES.includes(category)) return category;
     if (category === "가방 속") {
       return id === "before-shoes" ? "위탁 수하물" : "기내 수하물";
     }
-    return "예약·서류";
+    if (category === "예약·서류") {
+      if (ownerId !== "common" || ["before-passport", "before-insurance"].includes(id)) return "개인 준비";
+      return "예약·티켓";
+    }
+    if (category === "통신·결제") {
+      if (ownerId !== "common" || ["before-esim", "before-payment"].includes(id)) return "개인 준비";
+      return "함께 준비";
+    }
+    return ownerId === "common" ? "함께 준비" : "개인 준비";
   }
 
   function sanitizeChecklist(items, fallback) {
@@ -196,11 +244,14 @@
       let id = cleanText(item.id, 100) || makeId("check");
       while (ids.has(id)) id = makeId("check");
       ids.add(id);
+      const ownerId = CHECK_OWNER_IDS.has(item.ownerId) ? item.ownerId : "common";
       return {
         id,
-        ownerId: CHECK_OWNER_IDS.has(item.ownerId) ? item.ownerId : "common",
-        category: normalizeCheckCategory(item.category, id),
+        ownerId,
+        category: normalizeCheckCategory(item.category, id, ownerId),
         text,
+        url: cleanChecklistUrl(item.url || item.link),
+        linkLabel: cleanText(item.linkLabel, 12),
         done: item.done === true
       };
     }).filter(Boolean);
@@ -317,6 +368,88 @@
     return [item.date, item.time, item.title, item.place, item.note].join("|");
   }
 
+  function previousChecklistDone(seed, previousById) {
+    if (seed.id === "before-map") return ["before-map", "before-hotel-map"].some((id) => previousById.get(id)?.done);
+    const exact = previousById.get(seed.id);
+    if (exact) return exact.done;
+    if (seed.ownerId === "common") {
+      return seed.done;
+    }
+
+    const template = PERSONAL_CHECKLIST_TEMPLATES.find((item) => personalChecklistId(seed.ownerId, item) === seed.id);
+    if (!template) return false;
+    const legacyIds = {
+      passport: ["before-passport"],
+      insurance: ["before-insurance"],
+      esim: ["before-esim"],
+      payment: ["before-payment"],
+      clothes: [`packing-${seed.ownerId}-clothes`],
+      toiletries: [`packing-${seed.ownerId}-toiletries`],
+      shoes: ["before-shoes"],
+      essentials: [`packing-${seed.ownerId}-essentials`],
+      documents: [],
+      charger: [`packing-${seed.ownerId}-power`, "before-adapter"],
+      battery: [`packing-${seed.ownerId}-power`],
+      medicine: ["before-medicine"],
+      liquids: [],
+      rain: ["before-rain"]
+    }[template.key] || [];
+    return legacyIds.some((id) => previousById.get(id)?.done);
+  }
+
+  function migratePracticalChecklist(previous) {
+    const previousById = new Map(previous.map((item) => [item.id, item]));
+    const legacyDefaultIds = new Set([
+      "before-flight", "before-hotel", "before-passport", "before-insurance",
+      "before-esim", "before-payment", "before-map", "before-hotel-map",
+      "before-adapter", "before-rain", "before-medicine", "before-shoes"
+    ]);
+    CHECKLIST_OWNERS.filter((owner) => owner.id !== "common").forEach((owner) => {
+      ["clothes", "toiletries", "essentials", "power"].forEach((key) => legacyDefaultIds.add(`packing-${owner.id}-${key}`));
+    });
+    checklistSeeds().forEach((item) => legacyDefaultIds.add(item.id));
+
+    const seeds = checklistSeeds().map((item) => ({ ...item, done: previousChecklistDone(item, previousById) }));
+    const usedIds = new Set(seeds.map((item) => item.id));
+    const custom = [];
+    const append = (item) => {
+      let id = item.id;
+      while (usedIds.has(id)) id = makeId("check");
+      usedIds.add(id);
+      custom.push({ ...item, id });
+    };
+
+    previous.forEach((item) => {
+      if (legacyDefaultIds.has(item.id)) return;
+      if (item.ownerId === "common" && ["위탁 수하물", "기내 수하물"].includes(item.category)) {
+        CHECKLIST_OWNERS.filter((owner) => owner.id !== "common").forEach((owner) => {
+          append({ ...item, id: `migrated-${owner.id}-${item.id}`.slice(0, 100), ownerId: owner.id });
+        });
+        return;
+      }
+      const allowedCategories = checklistCategoriesForOwner(item.ownerId);
+      append({
+        ...item,
+        category: allowedCategories.includes(item.category)
+          ? item.category
+          : item.ownerId === "common" ? "함께 준비" : "개인 준비"
+      });
+    });
+
+    return [...seeds, ...custom];
+  }
+
+  function normalizeChecklistScopes(items) {
+    return items.map((item) => {
+      const allowedCategories = checklistCategoriesForOwner(item.ownerId);
+      if (allowedCategories.includes(item.category)) return item;
+      return {
+        ...item,
+        category: item.ownerId === "common" ? "함께 준비" : "개인 준비"
+      };
+    });
+  }
+
   function applyMigrations(input) {
     if (!input.meta.appliedMigrations.includes(ITINERARY_MIGRATION)) {
       input.itinerary = input.itinerary.filter((item) => !LEGACY_PLACEHOLDERS.some((legacy) => sameItineraryItem(item, legacy)));
@@ -358,7 +491,14 @@
       input.meta.appliedMigrations.push(CHECKLIST_SCOPE_MIGRATION);
     }
 
-    input.schemaVersion = 4;
+    if (!input.meta.appliedMigrations.includes(CHECKLIST_TASKS_MIGRATION)) {
+      input.checklist = migratePracticalChecklist(input.checklist);
+      input.meta.appliedMigrations.push(CHECKLIST_TASKS_MIGRATION);
+    }
+
+    input.checklist = normalizeChecklistScopes(input.checklist);
+
+    input.schemaVersion = 5;
     return input;
   }
 
@@ -369,7 +509,7 @@
     const participants = sanitizeParticipants(input.participants, base.participants);
     const ui = input.ui && typeof input.ui === "object" ? input.ui : {};
     return {
-      schemaVersion: 4,
+      schemaVersion: 5,
       meta: sanitizeMeta(input.meta),
       checklist: sanitizeChecklist(input.checklist, base.checklist),
       itinerary: sanitizeItinerary(input.itinerary, base.itinerary),
@@ -573,10 +713,9 @@
     if (!container) return;
     container.replaceChildren();
     const ownerItems = state.checklist.filter((item) => item.ownerId === state.ui.activeChecklistOwner);
-    CHECK_CATEGORIES.forEach((category) => {
+    checklistCategoriesForOwner(state.ui.activeChecklistOwner).forEach((category) => {
       const categoryItems = ownerItems.filter((item) => item.category === category);
       const isBaggage = category === "위탁 수하물" || category === "기내 수하물";
-      if (!categoryItems.length && !isBaggage) return;
       const items = categoryItems.filter((item) => !(state.ui.hideCompleted && item.done));
       const group = createElement("section", `check-group${isBaggage ? " is-baggage" : ""}`);
       const heading = createElement("div", "check-group-heading");
@@ -604,13 +743,42 @@
           remove.dataset.action = "delete-check";
           remove.dataset.id = item.id;
           remove.setAttribute("aria-label", `${item.text} 삭제`);
-          row.append(label, remove);
+          const actions = createElement("div", "check-item-actions");
+          if (item.url) {
+            const link = createElement(
+              "a",
+              "check-item-link",
+              `${item.linkLabel || (item.category === "예약·티켓" || item.category === "교통·이동" ? "예약" : "열기")} ↗`
+            );
+            link.href = item.url;
+            link.target = "_blank";
+            link.rel = "noopener noreferrer";
+            link.setAttribute("aria-label", `${item.text} 링크 열기`);
+            actions.append(link);
+          }
+          actions.append(remove);
+          row.append(label, actions);
           list.append(row);
         });
       }
       group.append(list);
       container.append(group);
     });
+  }
+
+  function renderChecklistForm() {
+    const select = $("#checklistCategory");
+    if (!select) return;
+    const categories = checklistCategoriesForOwner(state.ui.activeChecklistOwner);
+    const previous = select.value;
+    select.replaceChildren(...categories.map((category) => {
+      const option = createElement("option", "", category);
+      option.value = category;
+      return option;
+    }));
+    select.value = categories.includes(previous) ? previous : categories[0];
+    const text = $("#checklistText");
+    if (text) text.placeholder = state.ui.activeChecklistOwner === "common" ? "예: 피크트램 예매" : "예: 모자 챙기기";
   }
 
   function renderPrepProgress() {
@@ -639,6 +807,7 @@
   function renderPrepare() {
     if ($("#hideCompleted")) $("#hideCompleted").checked = state.ui.hideCompleted;
     renderChecklistOwners();
+    renderChecklistForm();
     renderPrepProgress();
     renderChecklist();
   }
@@ -1689,6 +1858,7 @@
     document.addEventListener("change", (event) => {
       const ownerInput = event.target.closest("[data-check-owner]");
       if (ownerInput && ownerInput.checked && CHECK_OWNER_IDS.has(ownerInput.dataset.checkOwner)) {
+        $("#checklistForm")?.reset();
         state.ui.activeChecklistOwner = ownerInput.dataset.checkOwner;
         saveState(false);
         renderPrepare();
@@ -1714,9 +1884,16 @@
       event.preventDefault();
       const formData = new FormData(event.currentTarget);
       const text = cleanText(formData.get("text"), 80);
-      const category = CHECK_CATEGORIES.includes(formData.get("category")) ? formData.get("category") : "예약·서류";
+      const categories = checklistCategoriesForOwner(state.ui.activeChecklistOwner);
+      const category = categories.includes(formData.get("category")) ? formData.get("category") : categories[0];
+      const rawUrl = cleanText(formData.get("url"), 600);
+      const url = cleanChecklistUrl(rawUrl);
       if (!text) return;
-      state.checklist.push({ id: makeId("check"), ownerId: state.ui.activeChecklistOwner, category, text, done: false });
+      if (rawUrl && !url) {
+        showToast("http 또는 https 링크를 입력해 주세요", true);
+        return;
+      }
+      state.checklist.push({ id: makeId("check"), ownerId: state.ui.activeChecklistOwner, category, text, url, done: false });
       event.currentTarget.reset();
       saveState();
       renderPrepare();
