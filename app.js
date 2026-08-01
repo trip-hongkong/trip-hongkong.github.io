@@ -11,7 +11,6 @@
   const END_DATE = "2026-08-19";
   const TIMEZONE = "Asia/Hong_Kong";
   const PAGE = document.body.dataset.page || "home";
-  const MAP_LIST_URL = "https://maps.app.goo.gl/c4aqxDU5yhHmMNfu5?g_st=ac";
   const WEATHER_URL = "https://api.open-meteo.com/v1/forecast?latitude=22.3193&longitude=114.1694&timezone=Asia%2FHong_Kong&forecast_days=16&current=temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max";
   const RATE_URL = "https://api.frankfurter.dev/v2/rate/HKD/KRW";
 
@@ -58,13 +57,6 @@
   const STAYS = [
     { city: "HONG KONG", status: "3박", name: "Royal Plaza Hotel", address: "193 Prince Edward Road West, Kowloon, Hong Kong", addressHtml: "193 Prince Edward Road West,<br>Kowloon, Hong Kong", dates: "15–18 AUG", room: "Family · 1실" },
     { city: "MACAU", status: "1박", name: "Broadway Hotel", address: "Sul da Marina Taipa-Sul, junto a Rotunda do Dique Oeste, Taipa, Macau", addressHtml: "Sul da Marina Taipa-Sul,<br>Taipa, Macau", dates: "18–19 AUG", room: "King · 2실" }
-  ];
-
-  const PLACE_SEEDS = [
-    { name: "스타페리 터미널", description: "침사추이에서 배로 이동", query: "Star Ferry Pier Tsim Sha Tsui Hong Kong" },
-    { name: "스타의 거리", description: "빅토리아항 야경", query: "Avenue of Stars Hong Kong" },
-    { name: "템플스트리트 야시장", description: "야시장과 저녁", query: "Temple Street Night Market Hong Kong" },
-    { name: "구룡채성 공원", description: "남문 유적과 전시", query: "Kowloon Walled City Park Hong Kong" }
   ];
 
   const CHECK_CATEGORIES = ["예약·서류", "통신·결제", "가방 속"];
@@ -548,34 +540,10 @@
     }
   }
 
-  function renderSavedPlaces() {
-    const container = $("#placeSeedList");
-    if (!container) return;
-    container.replaceChildren();
-    PLACE_SEEDS.forEach((place, index) => {
-      const row = createElement("div", "saved-place");
-      const copy = createElement("div");
-      copy.append(createElement("strong", "", place.name), createElement("small", "", place.description));
-      const actions = createElement("div", "inline-actions");
-      const map = createElement("a", "", "지도 ↗");
-      map.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place.query)}`;
-      map.target = "_blank";
-      map.rel = "noopener noreferrer";
-      const add = createElement("button", "", "+ 일정");
-      add.type = "button";
-      add.dataset.action = "add-place";
-      add.dataset.index = String(index);
-      actions.append(map, add);
-      row.append(copy, actions);
-      container.append(row);
-    });
-  }
-
   function renderPrepare() {
     if ($("#hideCompleted")) $("#hideCompleted").checked = state.ui.hideCompleted;
     renderPrepProgress();
     renderChecklist();
-    renderSavedPlaces();
   }
 
   function renderDaySwitcher() {
@@ -1131,15 +1099,6 @@
     if (dialog && dialog.open) dialog.close();
   }
 
-  function addPlaceToItinerary(index) {
-    const place = PLACE_SEEDS[index];
-    if (!place) return;
-    state.itinerary.push({ id: makeId("plan"), date: state.ui.activeDate, time: "", status: "custom", title: place.description, place: place.name, note: "" });
-    saveState(false);
-    renderTrip();
-    showToast(`${place.name}을 8월 ${selectedDay().number}일에 추가했습니다`);
-  }
-
   function openExpenseDialog() {
     const dialog = $("#expenseDialog");
     const form = $("#expenseForm");
@@ -1547,7 +1506,6 @@
     if (action === "refresh-weather") fetchWeather(true);
     if (action === "refresh-rate") fetchRate(true);
     if (action === "toggle-theme") toggleTheme();
-    if (action === "add-place") addPlaceToItinerary(Number(button.dataset.index));
     if (action === "open-itinerary") openItineraryDialog();
     if (action === "close-itinerary") closeDialog("#itineraryDialog");
     if (action === "open-expense") openExpenseDialog();
