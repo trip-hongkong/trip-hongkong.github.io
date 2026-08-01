@@ -44,11 +44,17 @@ jobs:
         with:
           gradle-version: "8.9"
 
-      - name: Keep a stable app signing key
-        uses: actions/cache@v4
-        with:
-          path: ~/.android/debug.keystore
-          key: hk-trip-debug-signing-v1
+      - name: Restore permanent release signing key
+        shell: bash
+        env:
+          SIGNING_KEY_BASE64: ${{ secrets.ANDROID_SIGNING_KEY_BASE64 }}
+        run: |
+          if [ -z "$SIGNING_KEY_BASE64" ]; then
+            echo "::error::ANDROID_SIGNING_KEY_BASE64 is not configured"
+            exit 1
+          fi
+          printf '%s' "$SIGNING_KEY_BASE64" | base64 --decode > "$RUNNER_TEMP/hk-trip-release.p12"
+          chmod 600 "$RUNNER_TEMP/hk-trip-release.p12"
 
       - name: Generate Android wrapper
         shell: bash
@@ -101,16 +107,27 @@ jobs:
               namespace "io.github.triphongkong.app"
               compileSdk 35
 
+              signingConfigs {
+                  release {
+                      storeFile file(System.getenv("ANDROID_SIGNING_STORE_FILE"))
+                      storePassword System.getenv("ANDROID_SIGNING_STORE_PASSWORD")
+                      keyAlias System.getenv("ANDROID_SIGNING_KEY_ALIAS")
+                      keyPassword System.getenv("ANDROID_SIGNING_KEY_PASSWORD")
+                      storeType "PKCS12"
+                  }
+              }
+
               defaultConfig {
                   applicationId "io.github.triphongkong.app"
                   minSdk 26
                   targetSdk 35
-                  versionCode 2
-                  versionName "1.1.0"
+                  versionCode (System.getenv("GITHUB_RUN_NUMBER") ?: "1").toInteger()
+                  versionName "1.2.${System.getenv("GITHUB_RUN_NUMBER") ?: "1"}"
               }
 
               buildTypes {
                   release {
+                      signingConfig signingConfigs.release
                       minifyEnabled false
                   }
               }
@@ -679,16 +696,27 @@ jobs:
           }
           EOF
 
-      - name: Build debug APK
+      - name: Build signed release APK
         working-directory: android-app
-        run: gradle --no-daemon --stacktrace :app:assembleDebug
+        env:
+          ANDROID_SIGNING_STORE_FILE: ${{ runner.temp }}/hk-trip-release.p12
+          ANDROID_SIGNING_STORE_PASSWORD: ${{ secrets.ANDROID_SIGNING_STORE_PASSWORD }}
+          ANDROID_SIGNING_KEY_ALIAS: ${{ secrets.ANDROID_SIGNING_KEY_ALIAS }}
+          ANDROID_SIGNING_KEY_PASSWORD: ${{ secrets.ANDROID_SIGNING_KEY_PASSWORD }}
+        run: gradle --no-daemon --stacktrace :app:assembleRelease
+
+      - name: Verify release signature
+        shell: bash
+        run: |
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs android-app/app/build/outputs/apk/release/app-release.apk
 
       - name: Prepare download files
         shell: bash
         run: |
-          cp android-app/app/build/outputs/apk/debug/app-debug.apk Hong-Kong-2026.apk
+          cp android-app/app/build/outputs/apk/release/app-release.apk Hong-Kong-2026.apk
           sha256sum Hong-Kong-2026.apk > Hong-Kong-2026.apk.sha256
           echo "Built from ${{ github.sha }}" > android-build-info.txt
+          echo "Version code ${{ github.run_number }}" >> android-build-info.txt
 
       - name: Upload Actions artifact
         uses: actions/upload-artifact@v4
@@ -715,12 +743,12 @@ jobs:
               --clobber
             gh release edit "$RELEASE_TAG" \
               --title "HK Trip Android" \
-              --notes "HK Trip 여행 사이트를 앱처럼 여는 Android 데모 APK입니다. 사이트 변경 사항은 앱에 자동으로 반영됩니다."
+              --notes "HK Trip 여행 사이트를 앱처럼 여는 Android APK입니다. 기존 디버그 앱은 한 번 삭제한 뒤 이 버전을 새로 설치해 주세요. 이후 버전은 삭제 없이 업데이트할 수 있습니다."
           else
             gh release create "$RELEASE_TAG" \
               Hong-Kong-2026.apk \
               Hong-Kong-2026.apk.sha256 \
               android-build-info.txt \
               --title "HK Trip Android" \
-              --notes "HK Trip 여행 사이트를 앱처럼 여는 Android 데모 APK입니다. 사이트 변경 사항은 앱에 자동으로 반영됩니다."
+              --notes "HK Trip 여행 사이트를 앱처럼 여는 Android APK입니다. 기존 디버그 앱은 한 번 삭제한 뒤 이 버전을 새로 설치해 주세요. 이후 버전은 삭제 없이 업데이트할 수 있습니다."
           fi
