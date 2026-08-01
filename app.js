@@ -70,6 +70,7 @@
     { id: "junhyuk", label: "준혁" }
   ];
   const CHECK_OWNER_IDS = new Set(CHECKLIST_OWNERS.map((owner) => owner.id));
+  const FIXED_PARTICIPANT_IDS = new Set(["person-me", "person-companion", "person-companion-2", "person-companion-3"]);
   const COMMON_CHECK_CATEGORIES = ["예약·티켓", "교통·이동", "함께 준비"];
   const PERSONAL_CHECK_CATEGORIES = ["개인 준비", "위탁 수하물", "기내 수하물"];
   const CHECK_CATEGORIES = [...COMMON_CHECK_CATEGORIES, ...PERSONAL_CHECK_CATEGORIES];
@@ -1268,7 +1269,7 @@
     state.participants.forEach((person) => {
       const pill = createElement("span", `person-pill${person.active ? "" : " is-inactive"}`);
       pill.append(createElement("span", "", person.active ? person.name : `${person.name} · 이전 내역`));
-      if (person.active) {
+      if (person.active && !FIXED_PARTICIPANT_IDS.has(person.id)) {
         const remove = createElement("button", "", "×");
         remove.type = "button";
         remove.dataset.action = "remove-person";
@@ -1744,6 +1745,10 @@
   function removeParticipant(id) {
     const person = personById(id);
     if (!person || !person.active) return;
+    if (FIXED_PARTICIPANT_IDS.has(id)) {
+      showToast("민제·준호·주영·준혁은 개인 체크리스트가 있어 삭제할 수 없습니다", true);
+      return;
+    }
     if (state.participants.filter((entry) => entry.active).length <= 1) {
       showToast("참가자는 한 명 이상 필요합니다", true);
       return;
