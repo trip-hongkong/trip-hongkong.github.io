@@ -29,8 +29,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css?v=20260801-7">
-  <link rel="stylesheet" href="poster.css?v=20260801-17">
-  <script defer src="app.js?v=20260801-17"></script>
+  <link rel="stylesheet" href="poster.css?v=20260801-18">
+  <script defer src="app.js?v=20260801-18"></script>
 </head>
 <body class="calm-ui" data-page="all">
   <a class="skip-link" href="#main">본문으로 바로가기</a>
@@ -238,10 +238,10 @@
             <article class="card plain-card exchange-panel" id="exchange">
               <div class="card-heading card-title-row"><div><p class="card-label">HKD ↔ KRW</p><h3>환율 계산</h3></div><button class="icon-button" type="button" data-action="refresh-rate" aria-label="환율 새로고침">↻</button></div>
               <div class="rate-display"><span>1 HKD</span><strong id="rateDisplay">불러오는 중</strong><small id="rateDate">Frankfurter</small></div>
-              <div class="converter">
-                <label><span>홍콩달러</span><div><b>HK$</b><input id="hkdInput" type="number" inputmode="decimal" min="0" step="0.01" value="100" aria-label="홍콩달러 금액"></div></label>
-                <button type="button" data-action="swap-currency" aria-label="변환 방향 바꾸기">⇅</button>
-                <label><span>원화</span><div><b>₩</b><input id="krwInput" type="number" inputmode="numeric" min="0" step="1" aria-label="원화 금액"></div></label>
+              <div class="converter" data-source="HKD">
+                <label class="converter-field is-source" data-currency="HKD"><span><span class="converter-name">홍콩달러</span><small class="converter-role">입력</small></span><div><b>HK$</b><input id="hkdInput" type="number" inputmode="decimal" min="0" step="0.01" value="100" autocomplete="off" aria-label="홍콩달러 입력 금액"></div></label>
+                <button class="converter-swap" type="button" data-action="swap-currency" aria-label="원화 입력으로 바꾸기"><span aria-hidden="true">⇅</span></button>
+                <label class="converter-field is-target" data-currency="KRW"><span><span class="converter-name">원화</span><small class="converter-role">결과</small></span><div><b>₩</b><input id="krwInput" type="number" inputmode="numeric" min="0" step="1" autocomplete="off" readonly aria-label="원화 환산 결과"></div></label>
               </div>
               <p class="source-note">참고 환율 · 실제 결제액과 다를 수 있음</p>
             </article>
