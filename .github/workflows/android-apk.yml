@@ -37,6 +37,667 @@ jobs:
       - name: Install Android platform
         shell: bash
         run: |
+          sdkmanager "platforms;android-35" "build-tools;35.0.0"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.9"
+
+      - name: Generate Android wrapper
+        shell: bash
+        run: |
+          mkdir -p android-app/app/src/main/java/io/github/triphongkong/app
+          mkdir -p android-app/app/src/main/res/drawable
+          mkdir -p android-app/app/src/main/res/values
+          mkdir -p android-app/app/src/main/res/values-night
+          mkdir -p android-app/app/src/main/res/xml
+
+          cat > android-app/settings.gradle <<'EOF'
+          pluginManagement {
+              repositories {
+                  google()
+                  mavenCentral()
+                  gradlePluginPortal()
+              }
+          }
+
+          dependencyResolutionManagement {
+              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+          }
+
+          rootProject.name = "HongKong2026"
+          include(":app")
+          EOF
+
+          cat > android-app/build.gradle <<'EOF'
+          plugins {
+              id "com.android.application" version "8.7.3" apply false
+          }
+          EOF
+
+          cat > android-app/app/build.gradle <<'EOF'
+          plugins {
+              id "com.android.application"
+          }
+
+          android {
+              namespace "io.github.triphongkong.app"
+              compileSdk 35
+
+              defaultConfig {
+                  applicationId "io.github.triphongkong.app"
+                  minSdk 26
+                  targetSdk 35
+                  versionCode 1
+                  versionName "1.0.0"
+              }
+
+              buildTypes {
+                  release {
+                      minifyEnabled false
+                  }
+              }
+
+              compileOptions {
+                  sourceCompatibility JavaVersion.VERSION_17
+                  targetCompatibility JavaVersion.VERSION_17
+              }
+          }
+
+          dependencies {
+              implementation "androidx.core:core:1.13.1"
+          }
+          EOF
+
+          cat > android-app/app/src/main/AndroidManifest.xml <<'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+              <uses-permission android:name="android.permission.INTERNET" />
+
+              <application
+                  android:allowBackup="false"
+                  android:fullBackupContent="false"
+                  android:icon="@drawable/ic_launcher"
+                  android:label="@string/app_name"
+                  android:networkSecurityConfig="@xml/network_security_config"
+                  android:roundIcon="@drawable/ic_launcher"
+                  android:supportsRtl="true"
+                  android:theme="@style/AppTheme"
+                  android:usesCleartextTraffic="false">
+
+                  <activity
+                      android:name=".MainActivity"
+                      android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|screenSize|smallestScreenSize|uiMode"
+                      android:enableOnBackInvokedCallback="false"
+                      android:exported="true">
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN" />
+                          <category android:name="android.intent.category.LAUNCHER" />
+                      </intent-filter>
+                  </activity>
+
+                  <provider
+                      android:name="androidx.core.content.FileProvider"
+                      android:authorities="io.github.triphongkong.app.files"
+                      android:exported="false"
+                      android:grantUriPermissions="true">
+                      <meta-data
+                          android:name="android.support.FILE_PROVIDER_PATHS"
+                          android:resource="@xml/file_paths" />
+                  </provider>
+              </application>
+          </manifest>
+          EOF
+
+          cat > android-app/app/src/main/res/values/strings.xml <<'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <resources>
+              <string name="app_name">Hong Kong 2026</string>
+          </resources>
+          EOF
+
+          cat > android-app/app/src/main/res/values/styles.xml <<'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <resources>
+              <style name="AppTheme" parent="@android:style/Theme.Material.Light.NoActionBar">
+                  <item name="android:fontFamily">sans</item>
+                  <item name="android:windowLightStatusBar">true</item>
+                  <item name="android:windowLightNavigationBar">true</item>
+                  <item name="android:statusBarColor">#F5F5F7</item>
+                  <item name="android:navigationBarColor">#FFFFFF</item>
+                  <item name="android:windowNoTitle">true</item>
+              </style>
+          </resources>
+          EOF
+
+          cat > android-app/app/src/main/res/values-night/styles.xml <<'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <resources>
+              <style name="AppTheme" parent="@android:style/Theme.Material.NoActionBar">
+                  <item name="android:fontFamily">sans</item>
+                  <item name="android:windowLightStatusBar">false</item>
+                  <item name="android:windowLightNavigationBar">false</item>
+                  <item name="android:statusBarColor">#000000</item>
+                  <item name="android:navigationBarColor">#000000</item>
+                  <item name="android:windowNoTitle">true</item>
+              </style>
+          </resources>
+          EOF
+
+          cat > android-app/app/src/main/res/xml/network_security_config.xml <<'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <network-security-config>
+              <base-config cleartextTrafficPermitted="false">
+                  <trust-anchors>
+                      <certificates src="system" />
+                  </trust-anchors>
+              </base-config>
+          </network-security-config>
+          EOF
+
+          cat > android-app/app/src/main/res/xml/file_paths.xml <<'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <paths xmlns:android="http://schemas.android.com/apk/res/android">
+              <cache-path name="camera_cache" path="." />
+              <external-cache-path name="external_camera_cache" path="." />
+          </paths>
+          EOF
+
+          cat > android-app/app/src/main/res/drawable/ic_launcher.xml <<'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <vector xmlns:android="http://schemas.android.com/apk/res/android"
+              android:width="108dp"
+              android:height="108dp"
+              android:viewportWidth="24"
+              android:viewportHeight="24">
+              <path
+                  android:fillColor="#E5002B"
+                  android:pathData="M0,0h24v24h-24z" />
+              <path
+                  android:fillColor="#FFFFFF"
+                  android:pathData="M21,16v-2l-8,-5V3.5C13,2.67 12.33,2 11.5,2S10,2.67 10,3.5V9l-8,5v2l8,-2.5V19l-2,1.5V22l3.5,-1 3.5,1v-1.5L13,19v-5.5z" />
+          </vector>
+          EOF
+
+          cat > android-app/app/src/main/java/io/github/triphongkong/app/MainActivity.java <<'EOF'
+          package io.github.triphongkong.app;
+
+          import android.app.Activity;
+          import android.content.ActivityNotFoundException;
+          import android.content.ClipData;
+          import android.content.Intent;
+          import android.graphics.Color;
+          import android.net.Uri;
+          import android.net.http.SslError;
+          import android.os.Bundle;
+          import android.provider.MediaStore;
+          import android.view.Gravity;
+          import android.view.View;
+          import android.view.ViewGroup;
+          import android.webkit.CookieManager;
+          import android.webkit.SslErrorHandler;
+          import android.webkit.ValueCallback;
+          import android.webkit.WebChromeClient;
+          import android.webkit.WebResourceError;
+          import android.webkit.WebResourceRequest;
+          import android.webkit.WebSettings;
+          import android.webkit.WebView;
+          import android.webkit.WebViewClient;
+          import android.widget.FrameLayout;
+          import android.widget.TextView;
+          import android.widget.Toast;
+
+          import androidx.core.content.FileProvider;
+
+          import java.io.File;
+          import java.io.IOException;
+          import java.util.ArrayList;
+          import java.util.Locale;
+
+          public final class MainActivity extends Activity {
+              private static final String APP_HOST = "trip-hongkong.github.io";
+              private static final String START_URL =
+                      "https://trip-hongkong.github.io/?source=android#prepare";
+              private static final int FILE_CHOOSER_REQUEST = 4301;
+
+              private WebView webView;
+              private TextView offlineView;
+              private ValueCallback<Uri[]> pendingFileCallback;
+              private Uri pendingCameraUri;
+              private boolean mainFrameFailed;
+
+              @Override
+              protected void onCreate(Bundle savedInstanceState) {
+                  super.onCreate(savedInstanceState);
+
+                  FrameLayout root = new FrameLayout(this);
+                  webView = new WebView(this);
+                  offlineView = buildOfflineView();
+
+                  root.addView(
+                          webView,
+                          new FrameLayout.LayoutParams(
+                                  ViewGroup.LayoutParams.MATCH_PARENT,
+                                  ViewGroup.LayoutParams.MATCH_PARENT));
+                  root.addView(
+                          offlineView,
+                          new FrameLayout.LayoutParams(
+                                  ViewGroup.LayoutParams.MATCH_PARENT,
+                                  ViewGroup.LayoutParams.MATCH_PARENT));
+                  setContentView(root);
+
+                  configureWebView();
+
+                  if (savedInstanceState == null || webView.restoreState(savedInstanceState) == null) {
+                      webView.loadUrl(START_URL);
+                  }
+              }
+
+              private TextView buildOfflineView() {
+                  TextView view = new TextView(this);
+                  view.setText("인터넷 연결을 확인해 주세요.\n\n눌러서 다시 시도");
+                  view.setTextSize(17);
+                  view.setTextColor(Color.rgb(29, 29, 31));
+                  view.setGravity(Gravity.CENTER);
+                  view.setBackgroundColor(Color.rgb(245, 245, 247));
+                  view.setPadding(40, 40, 40, 40);
+                  view.setVisibility(View.GONE);
+                  view.setClickable(true);
+                  view.setOnClickListener(v -> {
+                      view.setVisibility(View.GONE);
+                      mainFrameFailed = false;
+                      webView.loadUrl(START_URL);
+                  });
+                  return view;
+              }
+
+              private void configureWebView() {
+                  WebSettings settings = webView.getSettings();
+                  settings.setJavaScriptEnabled(true);
+                  settings.setDomStorageEnabled(true);
+                  settings.setDatabaseEnabled(true);
+                  settings.setAllowFileAccess(false);
+                  settings.setAllowContentAccess(true);
+                  settings.setAllowFileAccessFromFileURLs(false);
+                  settings.setAllowUniversalAccessFromFileURLs(false);
+                  settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
+                  settings.setSafeBrowsingEnabled(true);
+                  settings.setSupportMultipleWindows(false);
+                  settings.setJavaScriptCanOpenWindowsAutomatically(false);
+                  settings.setGeolocationEnabled(false);
+                  settings.setMediaPlaybackRequiresUserGesture(true);
+                  settings.setUserAgentString(
+                          settings.getUserAgentString() + " HongKong2026Android/1.0");
+
+                  webView.removeJavascriptInterface("searchBoxJavaBridge_");
+                  webView.removeJavascriptInterface("accessibility");
+                  webView.removeJavascriptInterface("accessibilityTraversal");
+
+                  CookieManager cookieManager = CookieManager.getInstance();
+                  cookieManager.setAcceptCookie(true);
+                  cookieManager.setAcceptThirdPartyCookies(webView, false);
+
+                  WebView.setWebContentsDebuggingEnabled(false);
+                  webView.setWebViewClient(new TrustedSiteClient());
+                  webView.setWebChromeClient(new TrustedSiteChromeClient());
+                  webView.setDownloadListener((url, userAgent, contentDisposition, mimeType, length) -> {
+                      if (url != null && url.startsWith("blob:")) {
+                          Toast.makeText(
+                                          this,
+                                          "백업 파일은 브라우저에서 내려받아 주세요.",
+                                          Toast.LENGTH_LONG)
+                                  .show();
+                          openExternal(Uri.parse(START_URL));
+                          return;
+                      }
+                      if (url != null) {
+                          openExternal(Uri.parse(url));
+                      }
+                  });
+              }
+
+              private boolean isTrustedSite(Uri uri) {
+                  return uri != null
+                          && "https".equalsIgnoreCase(uri.getScheme())
+                          && APP_HOST.equalsIgnoreCase(uri.getHost());
+              }
+
+              private void openExternal(Uri uri) {
+                  if (uri == null) {
+                      return;
+                  }
+                  try {
+                      startActivity(new Intent(Intent.ACTION_VIEW, uri));
+                  } catch (ActivityNotFoundException error) {
+                      Toast.makeText(this, "열 수 있는 앱이 없습니다.", Toast.LENGTH_SHORT).show();
+                  }
+              }
+
+              private final class TrustedSiteClient extends WebViewClient {
+                  @Override
+                  public boolean shouldOverrideUrlLoading(
+                          WebView view, WebResourceRequest request) {
+                      Uri uri = request.getUrl();
+                      if (isTrustedSite(uri)) {
+                          return false;
+                      }
+                      String scheme = uri == null ? "" : String.valueOf(uri.getScheme());
+                      if ("blob".equalsIgnoreCase(scheme)
+                              || "data".equalsIgnoreCase(scheme)
+                              || "about".equalsIgnoreCase(scheme)) {
+                          return false;
+                      }
+                      openExternal(uri);
+                      return true;
+                  }
+
+                  @Override
+                  public void onPageStarted(WebView view, String url, android.graphics.Bitmap favicon) {
+                      mainFrameFailed = false;
+                      offlineView.setVisibility(View.GONE);
+                  }
+
+                  @Override
+                  public void onPageFinished(WebView view, String url) {
+                      if (!mainFrameFailed) {
+                          offlineView.setVisibility(View.GONE);
+                      }
+                  }
+
+                  @Override
+                  public void onReceivedError(
+                          WebView view,
+                          WebResourceRequest request,
+                          WebResourceError error) {
+                      if (request.isForMainFrame()) {
+                          mainFrameFailed = true;
+                          offlineView.setVisibility(View.VISIBLE);
+                      }
+                  }
+
+                  @Override
+                  public void onReceivedSslError(
+                          WebView view, SslErrorHandler handler, SslError error) {
+                      handler.cancel();
+                      mainFrameFailed = true;
+                      offlineView.setVisibility(View.VISIBLE);
+                  }
+              }
+
+              private final class TrustedSiteChromeClient extends WebChromeClient {
+                  @Override
+                  public boolean onShowFileChooser(
+                          WebView source,
+                          ValueCallback<Uri[]> filePathCallback,
+                          FileChooserParams fileChooserParams) {
+                      if (pendingFileCallback != null) {
+                          pendingFileCallback.onReceiveValue(null);
+                      }
+                      pendingFileCallback = filePathCallback;
+                      pendingCameraUri = null;
+
+                      String[] accepts = fileChooserParams == null
+                              ? new String[0]
+                              : fileChooserParams.getAcceptTypes();
+                      boolean acceptsImage = acceptsImage(accepts);
+
+                      Intent picker = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+                      picker.addCategory(Intent.CATEGORY_OPENABLE);
+                      picker.setType(pickerType(accepts));
+                      picker.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                      if (fileChooserParams != null
+                              && fileChooserParams.getMode()
+                                      == FileChooserParams.MODE_OPEN_MULTIPLE) {
+                          picker.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
+                      }
+
+                      ArrayList<Intent> initialIntents = new ArrayList<>();
+                      if (acceptsImage) {
+                          Intent camera = buildCameraIntent();
+                          if (camera != null) {
+                              initialIntents.add(camera);
+                          }
+                      }
+
+                      Intent chooser = Intent.createChooser(picker, "사진 또는 파일 선택");
+                      chooser.putExtra(
+                              Intent.EXTRA_INITIAL_INTENTS,
+                              initialIntents.toArray(new Intent[0]));
+
+                      try {
+                          startActivityForResult(chooser, FILE_CHOOSER_REQUEST);
+                          return true;
+                      } catch (ActivityNotFoundException error) {
+                          pendingFileCallback.onReceiveValue(null);
+                          pendingFileCallback = null;
+                          pendingCameraUri = null;
+                          Toast.makeText(
+                                          MainActivity.this,
+                                          "파일을 선택할 수 있는 앱이 없습니다.",
+                                          Toast.LENGTH_SHORT)
+                                  .show();
+                          return false;
+                      }
+                  }
+              }
+
+              private Intent buildCameraIntent() {
+                  File directory = getExternalCacheDir();
+                  if (directory == null) {
+                      directory = getCacheDir();
+                  }
+                  try {
+                      File photo = File.createTempFile("receipt_", ".jpg", directory);
+                      pendingCameraUri = FileProvider.getUriForFile(
+                              this,
+                              "io.github.triphongkong.app.files",
+                              photo);
+
+                      Intent camera = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+                      camera.putExtra(MediaStore.EXTRA_OUTPUT, pendingCameraUri);
+                      camera.addFlags(
+                              Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                                      | Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                      camera.setClipData(ClipData.newRawUri("receipt", pendingCameraUri));
+                      return camera;
+                  } catch (IOException error) {
+                      pendingCameraUri = null;
+                      return null;
+                  }
+              }
+
+              private static boolean acceptsImage(String[] accepts) {
+                  if (accepts == null || accepts.length == 0) {
+                      return true;
+                  }
+                  for (String accept : accepts) {
+                      if (accept == null || accept.trim().isEmpty()) {
+                          continue;
+                      }
+                      String normalized = accept.toLowerCase(Locale.ROOT);
+                      if (normalized.contains("image") || normalized.equals("*/*")) {
+                          return true;
+                      }
+                  }
+                  return false;
+              }
+
+              private static String pickerType(String[] accepts) {
+                  if (accepts == null || accepts.length == 0) {
+                      return "*/*";
+                  }
+                  boolean image = false;
+                  boolean json = false;
+                  for (String accept : accepts) {
+                      if (accept == null) {
+                          continue;
+                      }
+                      String normalized = accept.toLowerCase(Locale.ROOT);
+                      image |= normalized.contains("image");
+                      json |= normalized.contains("json");
+                  }
+                  if (image && !json) {
+                      return "image/*";
+                  }
+                  if (json && !image) {
+                      return "application/json";
+                  }
+                  return "*/*";
+              }
+
+              @Override
+              protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+                  super.onActivityResult(requestCode, resultCode, data);
+                  if (requestCode != FILE_CHOOSER_REQUEST || pendingFileCallback == null) {
+                      return;
+                  }
+
+                  Uri[] result = null;
+                  if (resultCode == RESULT_OK) {
+                      if (data == null || (data.getData() == null && data.getClipData() == null)) {
+                          if (pendingCameraUri != null) {
+                              result = new Uri[] {pendingCameraUri};
+                          }
+                      } else {
+                          result = WebChromeClient.FileChooserParams.parseResult(resultCode, data);
+                      }
+                  }
+
+                  pendingFileCallback.onReceiveValue(result);
+                  pendingFileCallback = null;
+                  pendingCameraUri = null;
+              }
+
+              @Override
+              protected void onSaveInstanceState(Bundle outState) {
+                  webView.saveState(outState);
+                  super.onSaveInstanceState(outState);
+              }
+
+              @Override
+              protected void onPause() {
+                  webView.onPause();
+                  CookieManager.getInstance().flush();
+                  super.onPause();
+              }
+
+              @Override
+              protected void onResume() {
+                  super.onResume();
+                  webView.onResume();
+              }
+
+              @Override
+              protected void onDestroy() {
+                  if (webView != null) {
+                      webView.stopLoading();
+                      webView.setWebChromeClient(null);
+                      webView.setWebViewClient(null);
+                      webView.destroy();
+                  }
+                  super.onDestroy();
+              }
+
+              @Override
+              public void onBackPressed() {
+                  if (webView != null && webView.canGoBack()) {
+                      webView.goBack();
+                  } else {
+                      super.onBackPressed();
+                  }
+              }
+          }
+          EOF
+
+      - name: Build debug APK
+        working-directory: android-app
+        run: gradle --no-daemon --stacktrace :app:assembleDebug
+
+      - name: Prepare download files
+        shell: bash
+        run: |
+          cp android-app/app/build/outputs/apk/debug/app-debug.apk Hong-Kong-2026.apk
+          sha256sum Hong-Kong-2026.apk > Hong-Kong-2026.apk.sha256
+          echo "Built from ${{ github.sha }}" > android-build-info.txt
+
+      - name: Upload Actions artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Hong-Kong-2026-Android
+          path: |
+            Hong-Kong-2026.apk
+            Hong-Kong-2026.apk.sha256
+            android-build-info.txt
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Publish stable demo download
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          RELEASE_TAG="android-demo-v1"
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release upload "$RELEASE_TAG" \
+              Hong-Kong-2026.apk \
+              Hong-Kong-2026.apk.sha256 \
+              android-build-info.txt \
+              --clobber
+            gh release edit "$RELEASE_TAG" \
+              --title "Hong Kong 2026 Android" \
+              --notes "여행 사이트를 앱처럼 여는 Android 데모 APK입니다. 사이트 변경 사항은 앱에 자동으로 반영됩니다."
+          else
+            gh release create "$RELEASE_TAG" \
+              Hong-Kong-2026.apk \
+              Hong-Kong-2026.apk.sha256 \
+              android-build-info.txt \
+              --title "Hong Kong 2026 Android" \
+              --notes "여행 사이트를 앱처럼 여는 Android 데모 APK입니다. 사이트 변경 사항은 앱에 자동으로 반영됩니다."
+          fi
+name: Build Hong Kong Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/android-apk.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-demo-apk
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build and publish demo APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Check out site
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android platform
+        shell: bash
+        run: |
           yes | sdkmanager --licenses >/dev/null
           sdkmanager "platforms;android-35" "build-tools;35.0.0"
 
