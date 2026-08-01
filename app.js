@@ -5,6 +5,8 @@
   const LEGACY_STORAGE_KEY = "trip-hongkong-hub-v1";
   const DB_NAME = "trip-hongkong-media-v1";
   const DB_STORE = "receipts";
+  const THEME_KEY = "trip-hongkong-theme";
+  const THEME_MEDIA = window.matchMedia("(prefers-color-scheme: dark)");
   const START_DATE = "2026-08-15";
   const END_DATE = "2026-08-19";
   const TIMEZONE = "Asia/Hong_Kong";
@@ -83,6 +85,36 @@
 
   const $ = (selector, root = document) => root.querySelector(selector);
   const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
+
+  function themePreference() {
+    const preference = document.documentElement.dataset.themePreference;
+    return preference === "light" || preference === "dark" ? preference : "system";
+  }
+
+  function applyTheme(preference = "system", persist = false) {
+    const normalized = preference === "light" || preference === "dark" ? preference : "system";
+    const isDark = normalized === "dark" || (normalized === "system" && THEME_MEDIA.matches);
+    document.documentElement.dataset.theme = isDark ? "dark" : "light";
+    document.documentElement.dataset.themePreference = normalized;
+    const toggle = $(".theme-toggle");
+    if (toggle) {
+      toggle.setAttribute("aria-label", isDark ? "라이트 모드로 전환" : "다크 모드로 전환");
+      toggle.title = isDark ? "라이트 모드" : "다크 모드";
+      const icon = $(".theme-toggle-icon", toggle);
+      const label = $(".theme-toggle-label", toggle);
+      if (icon) icon.textContent = isDark ? "☀" : "☾";
+      if (label) label.textContent = isDark ? "라이트" : "다크";
+    }
+    const themeColor = $('meta[name="theme-color"]');
+    if (themeColor) themeColor.content = isDark ? "#000000" : "#f5f5f7";
+    if (persist) {
+      try { localStorage.setItem(THEME_KEY, normalized); } catch (error) {}
+    }
+  }
+
+  function toggleTheme() {
+    applyTheme(document.documentElement.dataset.theme === "dark" ? "light" : "dark", true);
+  }
 
   function defaultState() {
     return {
@@ -1520,6 +1552,7 @@
     const { action, id } = button.dataset;
     if (action === "refresh-weather") fetchWeather(true);
     if (action === "refresh-rate") fetchRate(true);
+    if (action === "toggle-theme") toggleTheme();
     if (action === "add-place") addPlaceToItinerary(Number(button.dataset.index));
     if (action === "open-itinerary") openItineraryDialog();
     if (action === "close-itinerary") closeDialog("#itineraryDialog");
@@ -1664,8 +1697,15 @@
     });
 
     window.addEventListener("hashchange", () => activateSection(sectionFromHash(), false, false));
+    THEME_MEDIA.addEventListener?.("change", () => {
+      if (themePreference() === "system") applyTheme("system", false);
+    });
 
     window.addEventListener("storage", (event) => {
+      if (event.key === THEME_KEY) {
+        applyTheme(event.newValue === "light" || event.newValue === "dark" ? event.newValue : "system", false);
+        return;
+      }
       if (event.key !== STORAGE_KEY || !event.newValue) return;
       try {
         state = normalizeState(JSON.parse(event.newValue));
@@ -1677,6 +1717,7 @@
     });
   }
 
+  applyTheme(themePreference(), false);
   renderPage();
   bindEvents();
   if (PAGE === "all") {
