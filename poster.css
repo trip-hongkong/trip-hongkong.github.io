@@ -1988,11 +1988,215 @@ html[data-theme] .calm-ui .hotel-card .primary-button,
 html[data-theme="dark"] .calm-ui .primary-button,
 html[data-theme="dark"] .calm-ui .dark-button {
   color: #fff;
-  background: #b72e35;
-  border-color: #b72e35;
+  background: var(--red);
+  border-color: var(--red);
 }
 html[data-theme] .calm-ui .hotel-card .secondary-button {
   color: var(--ink-soft);
   background: var(--paper-warm);
   border-color: transparent;
+}
+
+/* App accent: Apple blue. The photographic hero and paper ticket keep the red travel identity. */
+html[data-theme="light"] {
+  --accent: #0066cc;
+  --accent-strong: #004f9e;
+  --accent-soft: #e8f2ff;
+  --accent-line: rgba(0, 102, 204, .36);
+}
+html[data-theme="dark"] {
+  --accent: #0a84ff;
+  --accent-strong: #64d2ff;
+  --accent-soft: rgba(10, 132, 255, .18);
+  --accent-line: rgba(10, 132, 255, .42);
+}
+.calm-ui main,
+.calm-ui .mobile-phase-nav,
+.calm-ui dialog {
+  --red: var(--accent);
+  --red-dark: var(--accent-strong);
+  --red-soft: var(--accent-soft);
+}
+html[data-theme="dark"] .calm-ui main .primary-button,
+html[data-theme="dark"] .calm-ui main .dark-button,
+html[data-theme="dark"] .calm-ui dialog .primary-button,
+html[data-theme="dark"] .calm-ui dialog .dark-button { color: #00172b; }
+
+/* Mobile chrome owns real layout space and never visually blends with content. */
+@media (max-width: 760px) {
+  html {
+    scroll-padding-top: calc(82px + env(safe-area-inset-top));
+    scroll-padding-bottom: calc(88px + env(safe-area-inset-bottom));
+  }
+  .calm-ui { --mobile-nav-height: calc(66px + env(safe-area-inset-bottom)); }
+  .calm-ui .app-shell { padding-bottom: calc(var(--mobile-nav-height) + 36px); }
+  .calm-ui .phase-panel { scroll-margin-bottom: calc(var(--mobile-nav-height) + 20px); }
+  .calm-ui .footer { padding-bottom: calc(var(--mobile-nav-height) + 38px); }
+  .calm-ui .day-switcher-wrap {
+    background: var(--paper);
+    border-bottom: 1px solid var(--line);
+    box-shadow: 0 8px 18px rgba(0, 0, 0, .035);
+  }
+  .calm-ui .mobile-phase-nav {
+    min-height: var(--mobile-nav-height);
+    background: var(--paper);
+    border-top: 1px solid var(--line);
+    box-shadow: 0 -1px 0 var(--line);
+    backdrop-filter: none;
+    isolation: isolate;
+  }
+  html[data-theme="dark"] .calm-ui .mobile-phase-nav {
+    background: var(--paper);
+    box-shadow: 0 -1px 0 var(--line);
+  }
+  .calm-ui .save-toast { bottom: calc(var(--mobile-nav-height) + 12px); }
+  .calm-ui dialog[open] ~ .mobile-phase-nav,
+  .calm-ui:has(dialog[open]) .mobile-phase-nav {
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(100%);
+  }
+}
+
+@media (max-width: 760px) and (max-height: 560px) {
+  .calm-ui .day-switcher-wrap {
+    position: relative;
+    top: auto;
+  }
+}
+
+/* Final mobile chrome geometry: one reserved bottom inset, exact gutters, no stacked bars. */
+@media (max-width: 760px) {
+  .calm-ui {
+    --page-gutter: 16px;
+    --mobile-nav-height: calc(66px + env(safe-area-inset-bottom));
+    padding-bottom: 0;
+  }
+  .calm-ui .topbar {
+    width: auto;
+    min-height: calc(62px + env(safe-area-inset-top));
+    margin-right: max(var(--page-gutter), env(safe-area-inset-right));
+    margin-left: max(var(--page-gutter), env(safe-area-inset-left));
+    padding-top: env(safe-area-inset-top);
+  }
+  .calm-ui .app-shell { padding-bottom: 48px; }
+  .calm-ui .footer { padding-bottom: calc(32px + var(--mobile-nav-height)); }
+  .calm-ui .mobile-phase-nav {
+    right: 0;
+    bottom: 0;
+    left: 0;
+    height: var(--mobile-nav-height);
+    min-height: 0;
+    padding: 6px max(14px, env(safe-area-inset-right)) calc(6px + env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left));
+  }
+  .calm-ui .day-switcher-wrap {
+    top: env(safe-area-inset-top);
+    margin-inline: calc(0px - var(--page-gutter));
+    padding-top: 8px;
+    padding-right: max(var(--page-gutter), env(safe-area-inset-right));
+    padding-bottom: 8px;
+    padding-left: max(var(--page-gutter), env(safe-area-inset-left));
+  }
+  .calm-ui .phase-panel { scroll-margin-top: calc(18px + env(safe-area-inset-top)); }
+  .calm-ui #timeline,
+  .calm-ui #weather,
+  .calm-ui #exchange { scroll-margin-top: calc(82px + env(safe-area-inset-top)); }
+  .calm-ui .save-toast {
+    right: max(14px, env(safe-area-inset-right));
+    left: max(14px, env(safe-area-inset-left));
+  }
+  .calm-ui .modal[open] {
+    display: flex;
+    max-height: calc(100dvh - 8px);
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .calm-ui .modal-form {
+    flex: 1 1 auto;
+    min-height: 0;
+    padding-bottom: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scroll-padding-bottom: calc(76px + env(safe-area-inset-bottom));
+    padding-right: max(18px, env(safe-area-inset-right));
+    padding-left: max(18px, env(safe-area-inset-left));
+  }
+  .calm-ui .modal-actions {
+    position: sticky;
+    z-index: 2;
+    bottom: 0;
+    margin: 24px -18px 0;
+    padding-top: 12px;
+    padding-right: max(18px, env(safe-area-inset-right));
+    padding-bottom: calc(12px + env(safe-area-inset-bottom));
+    padding-left: max(18px, env(safe-area-inset-left));
+  }
+}
+
+@media (max-width: 360px) {
+  .calm-ui { --page-gutter: 12px; }
+  .calm-ui .topbar { gap: 8px; }
+  .calm-ui .topbar-actions { gap: 6px; }
+  .calm-ui .topbar-actions a.glass-button {
+    width: 44px;
+    min-width: 44px;
+    padding: 0;
+    overflow: hidden;
+    font-size: 0;
+  }
+  .calm-ui .topbar-actions a.glass-button::after { content: "\2197"; font-size: 16px; }
+}
+
+/* Blue selection language for checklist, segmented controls and navigation. */
+.calm-ui .checklist-progress i,
+.calm-ui .quick-progress i,
+.calm-ui .large-progress i,
+.calm-ui .day-tab.is-today::after,
+.calm-ui .mobile-phase-nav button[aria-selected="true"]::before { background: var(--accent); }
+html[data-theme] .calm-ui .phase-tab[aria-selected="true"],
+html[data-theme] .calm-ui .day-tab[aria-selected="true"],
+html[data-theme] .calm-ui .day-tab[aria-selected="true"] strong,
+html[data-theme] .calm-ui .mobile-phase-nav button[aria-selected="true"],
+.calm-ui .checklist-count { color: var(--accent); }
+html[data-theme] .calm-ui .day-tab[aria-selected="true"] {
+  background: var(--paper);
+  box-shadow: inset 0 0 0 1px var(--accent-line);
+}
+.calm-ui .check-item input,
+.calm-ui .checklist-filter input,
+.calm-ui .split-person input { accent-color: var(--accent); }
+.calm-ui .split-person:has(input:checked) {
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-color: var(--accent-line);
+}
+.calm-ui main :focus-visible,
+.calm-ui .topbar :focus-visible,
+.calm-ui .mobile-phase-nav :focus-visible,
+.calm-ui dialog :focus-visible { outline-color: var(--accent); }
+
+.calm-ui .mobile-phase-nav button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -3px;
+}
+
+/* Short phones and phone landscape keep only one fixed navigation bar. */
+@media (max-width: 760px) and (max-height: 600px) {
+  .calm-ui .day-switcher-wrap {
+    position: relative;
+    top: auto;
+  }
+}
+
+@media (min-width: 761px) and (max-height: 600px) and (pointer: coarse) {
+  .calm-ui .save-toast {
+    top: auto;
+    right: max(18px, env(safe-area-inset-right));
+    bottom: max(18px, env(safe-area-inset-bottom));
+    left: max(18px, env(safe-area-inset-left));
+    text-align: center;
+    transform: translateY(12px);
+  }
+  .calm-ui .save-toast.is-visible { transform: translateY(0); }
 }
