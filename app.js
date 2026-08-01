@@ -783,6 +783,43 @@
     return state.rateCache && Number(state.rateCache.rate) > 0 ? Number(state.rateCache.rate) : 0;
   }
 
+  function applyConverterDirection(shouldFocus = false) {
+    const converter = $(".converter");
+    const hkd = $("#hkdInput");
+    const krw = $("#krwInput");
+    const swap = $('[data-action="swap-currency"]');
+    if (!converter || !hkd || !krw || !swap) return;
+
+    const sourceIsHKD = converterSource === "HKD";
+    const sourceInput = sourceIsHKD ? hkd : krw;
+    const targetInput = sourceIsHKD ? krw : hkd;
+    const sourceLabel = sourceInput.closest("label");
+    const targetLabel = targetInput.closest("label");
+    const sourceName = sourceIsHKD ? "홍콩달러" : "원화";
+    const targetName = sourceIsHKD ? "원화" : "홍콩달러";
+    if (!sourceLabel || !targetLabel) return;
+
+    converter.dataset.source = converterSource;
+    sourceLabel.classList.add("is-source");
+    sourceLabel.classList.remove("is-target");
+    targetLabel.classList.add("is-target");
+    targetLabel.classList.remove("is-source");
+    sourceLabel.querySelector(".converter-role").textContent = "입력";
+    targetLabel.querySelector(".converter-role").textContent = "결과";
+    sourceInput.readOnly = false;
+    targetInput.readOnly = true;
+    sourceInput.setAttribute("aria-label", `${sourceName} 입력 금액`);
+    targetInput.setAttribute("aria-label", `${targetName} 환산 결과`);
+    swap.setAttribute("aria-label", `${targetName} 입력으로 바꾸기`);
+
+    // Move the actual fields so visual, keyboard and screen-reader order all match.
+    converter.replaceChildren(sourceLabel, swap, targetLabel);
+    if (shouldFocus) {
+      sourceInput.focus({ preventScroll: true });
+      sourceInput.select();
+    }
+  }
+
   function renderRate() {
     const rate = currentRate();
     if ($("#homeRate")) $("#homeRate").textContent = rate ? `₩${rate.toLocaleString("ko-KR", { maximumFractionDigits: 2 })}` : "확인 전";
@@ -790,6 +827,7 @@
     if ($("#rateDisplay")) $("#rateDisplay").textContent = rate ? `₩${rate.toLocaleString("ko-KR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "확인 전";
     if ($("#rateDate")) $("#rateDate").textContent = state.rateCache ? `${state.rateCache.date} 기준 · Frankfurter` : "Frankfurter";
     if ($("#expenseRateNote")) $("#expenseRateNote").textContent = rate ? `1 HKD = ₩${rate.toLocaleString("ko-KR", { maximumFractionDigits: 2 })} 환율로 저장합니다.` : "HKD 지출을 저장하려면 환율 연결이 필요합니다.";
+    applyConverterDirection();
     syncConverter(converterSource);
   }
 
@@ -797,13 +835,23 @@
     const hkd = $("#hkdInput");
     const krw = $("#krwInput");
     const rate = currentRate();
-    if (!hkd || !krw || !rate) return;
+    if (!hkd || !krw) return;
+    const sourceInput = source === "KRW" ? krw : hkd;
+    const targetInput = source === "KRW" ? hkd : krw;
+    const rawValue = sourceInput.value.trim();
+    if (!rate || rawValue === "") {
+      targetInput.value = "";
+      return;
+    }
+    const value = Number(rawValue);
+    if (!Number.isFinite(value) || value < 0) {
+      targetInput.value = "";
+      return;
+    }
     if (source === "KRW") {
-      const value = Number(krw.value);
-      hkd.value = Number.isFinite(value) && value >= 0 ? (value / rate).toFixed(2) : "";
+      hkd.value = (value / rate).toFixed(2);
     } else {
-      const value = Number(hkd.value);
-      krw.value = Number.isFinite(value) && value >= 0 ? String(Math.round(value * rate)) : "";
+      krw.value = String(Math.round(value * rate));
     }
   }
 
@@ -1525,8 +1573,7 @@
     if (action === "reset-settlement") resetSettlement();
     if (action === "swap-currency") {
       converterSource = converterSource === "HKD" ? "KRW" : "HKD";
-      syncConverter(converterSource);
-      (converterSource === "HKD" ? $("#hkdInput") : $("#krwInput"))?.focus();
+      applyConverterDirection(true);
     }
     if (action === "delete-check") {
       state.checklist = state.checklist.filter((item) => item.id !== id);
@@ -1603,8 +1650,12 @@
     $("#expenseForm")?.addEventListener("submit", addExpense);
     $("#receiptInput")?.addEventListener("change", (event) => previewReceipt(event.target.files?.[0]));
     $("#expenseFilter")?.addEventListener("change", renderExpenseList);
-    $("#hkdInput")?.addEventListener("input", () => { converterSource = "HKD"; syncConverter("HKD"); });
-    $("#krwInput")?.addEventListener("input", () => { converterSource = "KRW"; syncConverter("KRW"); });
+    $("#hkdInput")?.addEventListener("input", () => {
+      if (converterSource === "HKD") syncConverter("HKD");
+    });
+    $("#krwInput")?.addEventListener("input", () => {
+      if (converterSource === "KRW") syncConverter("KRW");
+    });
     $("#importFile")?.addEventListener("change", (event) => importData(event.target.files?.[0]));
 
     $$("dialog").forEach((dialog) => {
