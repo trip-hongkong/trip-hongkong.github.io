@@ -2433,3 +2433,47 @@ html[data-theme="dark"] .calm-ui .checklist-owner-option input:checked + .checkl
   .calm-ui .inline-add-form .primary-button { min-height: 46px; }
   .calm-ui .checklist-card .delete-button { opacity: .45; }
 }
+
+/* Actionable checklist links and owner-specific add form. */
+.calm-ui .check-item-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 2px;
+}
+.calm-ui .check-item-text {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.calm-ui .check-item-link {
+  display: inline-flex;
+  min-height: 34px;
+  padding: 7px 10px;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent-strong);
+  background: var(--accent-soft);
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 750;
+  line-height: 1;
+  white-space: nowrap;
+}
+.calm-ui .check-item-link:hover { box-shadow: inset 0 0 0 1px var(--accent-line); }
+.calm-ui .checklist-link-field span small {
+  margin-left: 3px;
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 500;
+}
+
+@media (min-width: 761px) {
+  .calm-ui .checklist-add-form {
+    grid-template-columns: 135px minmax(160px, 1.1fr) minmax(190px, 1fr) auto;
+  }
+}
+
+@media (max-width: 760px) {
+  .calm-ui .check-item-actions { gap: 4px; }
+  .calm-ui .check-item-link { min-width: 44px; min-height: 44px; padding-inline: 8px; }
+}
