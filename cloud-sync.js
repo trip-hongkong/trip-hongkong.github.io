@@ -93,6 +93,7 @@
       this.flushTimer = 0;
       this.applyRemote = false;
       this.started = false;
+      this.needsReconnect = false;
       this.maps = this.emptyMaps();
       this.receipts = new Map();
       this.lastShared = null;
@@ -120,6 +121,18 @@
 
     isApplyingRemote() {
       return this.applyRemote;
+    }
+
+    restoreOfflineContext() {
+      const remembered = safeParse(safeGet(CONTEXT_KEY), {});
+      const tripId = cleanText(remembered.tripId, 80);
+      if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(tripId)) return false;
+      this.tripId = tripId;
+      this.role = ["owner", "editor", "viewer"].includes(remembered.role) ? remembered.role : "editor";
+      this.trip = null;
+      this.needsReconnect = true;
+      this.loadQueue();
+      return true;
     }
 
     async init() {
@@ -156,7 +169,11 @@
         await this.connectTrip(membership.trip_id, membership.role);
       } catch (error) {
         console.warn("공용 여행방을 확인하지 못했습니다.", error);
-        if (!navigator.onLine) this.setStatus("offline");
+        if (!navigator.onLine) {
+          this.restoreOfflineContext();
+          this.needsReconnect = true;
+          this.setStatus("offline");
+        }
         else {
           this.setStatus("error", formatError(error));
           this.requireJoin(false, formatError(error));
@@ -317,6 +334,7 @@
     }
 
     async connectTrip(tripId, role = "editor", providedTrip = null) {
+      this.needsReconnect = true;
       this.tripId = tripId;
       this.role = role;
       this.trip = providedTrip?.trip_title
@@ -350,6 +368,7 @@
 
       await this.refetch(true);
       this.subscribeRealtime();
+      this.needsReconnect = false;
       this.scheduleFlush();
     }
 
@@ -501,9 +520,9 @@
       if (queuedChange) this.scheduleFlush();
     }
 
-    scheduleFlush() {
+    scheduleFlush(delay = 80) {
       window.clearTimeout(this.flushTimer);
-      this.flushTimer = window.setTimeout(() => this.flush(), 80);
+      this.flushTimer = window.setTimeout(() => this.flush(), delay);
     }
 
     entryWeight(entry) {
@@ -557,6 +576,7 @@
         this.setStatus("synced");
         return true;
       }
+      if (this.queue.length && navigator.onLine) this.scheduleFlush(successful ? 80 : 1500);
       return false;
     }
 
@@ -1016,8 +1036,38 @@
     }
 
     async handleOnline() {
-      if (!this.isReady()) return;
+      if (!this.client) return;
       this.setStatus("connecting", "공용 저장 연결을 다시 확인하는 중");
+      if (this.needsReconnect || !this.trip || !this.isReady()) {
+        try {
+          const { data, error } = await this.client.auth.getSession();
+          if (error) throw error;
+          this.userId = data.session?.user?.id || "";
+          if (!this.userId) {
+            this.tripId = "";
+            this.trip = null;
+            this.queue = [];
+            this.needsReconnect = false;
+            this.requireJoin(true);
+            return;
+          }
+          const membership = await this.findMembership();
+          if (!membership) {
+            this.tripId = "";
+            this.trip = null;
+            this.queue = [];
+            this.needsReconnect = false;
+            this.requireJoin(true);
+            return;
+          }
+          await this.connectTrip(membership.trip_id, membership.role);
+          return;
+        } catch (error) {
+          this.needsReconnect = true;
+          this.setStatus(navigator.onLine ? "error" : "offline", formatError(error));
+          return;
+        }
+      }
       await this.flush(false);
       await this.refetch(true).catch(() => {});
       if (!this.queue.length) this.setStatus("synced");
