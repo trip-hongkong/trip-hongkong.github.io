@@ -557,8 +557,9 @@
       button.role = "tab";
       button.dataset.date = day.date;
       button.setAttribute("aria-selected", String(day.date === state.ui.activeDate));
+      button.setAttribute("aria-controls", "timeline");
       button.tabIndex = day.date === state.ui.activeDate ? 0 : -1;
-      button.append(createElement("strong", "", day.number), createElement("span", "", `${day.weekday} · DAY ${day.day}`));
+      button.append(createElement("strong", "", day.number), createElement("span", "", day.weekday));
       container.append(button);
     });
   }
@@ -1014,7 +1015,11 @@
 
   function sectionFromHash() {
     const section = window.location.hash.replace(/^#/, "");
-    return SECTIONS.has(section) ? section : "prepare";
+    if (SECTIONS.has(section)) return section;
+    const today = todayInHongKong();
+    if (today < TRIP_DAYS[0].date) return "prepare";
+    if (today > TRIP_DAYS[TRIP_DAYS.length - 1].date) return "settle";
+    return "trip";
   }
 
   function activateSection(section, updateHash = false, scrollToTabs = false) {
@@ -1061,6 +1066,7 @@
     if (!place) return;
     state.itinerary.push({ id: makeId("plan"), date: state.ui.activeDate, time: "", status: "custom", title: place.description, place: place.name, note: "" });
     saveState(false);
+    renderTrip();
     showToast(`${place.name}을 8월 ${selectedDay().number}일에 추가했습니다`);
   }
 
