@@ -22,6 +22,7 @@
   ];
 
   const ITINERARY_MIGRATION = "confirmed-trip-plan-v1";
+  const PLACEHOLDER_CLEANUP_MIGRATION = "legacy-placeholder-cleanup-v1";
   const VALID_PLAN_STATUSES = new Set(["confirmed", "recommended", "flexible", "custom"]);
   const LEGACY_PLACEHOLDERS = [
     { id: "seed-arrival", date: "2026-08-15", time: "", title: "홍콩 도착", place: "", note: "항공편 확정 후 도착 시각과 이동 방법 입력" },
@@ -86,7 +87,7 @@
   function defaultState() {
     return {
       schemaVersion: 3,
-      meta: { appliedMigrations: [ITINERARY_MIGRATION] },
+      meta: { appliedMigrations: [ITINERARY_MIGRATION, PLACEHOLDER_CLEANUP_MIGRATION] },
       checklist: [
         { id: "before-flight", category: "예약·서류", text: "항공편과 수하물 규정 확인", done: true },
         { id: "before-hotel", category: "예약·서류", text: "숙소 예약·체크인 정보 확인", done: true },
@@ -251,32 +252,37 @@
   }
 
   function applyMigrations(input) {
-    if (input.meta.appliedMigrations.includes(ITINERARY_MIGRATION)) return input;
+    if (!input.meta.appliedMigrations.includes(ITINERARY_MIGRATION)) {
+      input.itinerary = input.itinerary.filter((item) => !LEGACY_PLACEHOLDERS.some((legacy) => sameItineraryItem(item, legacy)));
+      const ids = new Set(input.itinerary.map((item) => item.id));
+      const fingerprints = new Set(input.itinerary.map(itineraryFingerprint));
+      TRIP_ITINERARY.forEach((item) => {
+        if (ids.has(item.id) || fingerprints.has(itineraryFingerprint(item))) return;
+        input.itinerary.push({ ...item });
+        ids.add(item.id);
+        fingerprints.add(itineraryFingerprint(item));
+      });
 
-    input.itinerary = input.itinerary.filter((item) => !LEGACY_PLACEHOLDERS.some((legacy) => sameItineraryItem(item, legacy)));
-    const ids = new Set(input.itinerary.map((item) => item.id));
-    const fingerprints = new Set(input.itinerary.map(itineraryFingerprint));
-    TRIP_ITINERARY.forEach((item) => {
-      if (ids.has(item.id) || fingerprints.has(itineraryFingerprint(item))) return;
-      input.itinerary.push({ ...item });
-      ids.add(item.id);
-      fingerprints.add(itineraryFingerprint(item));
-    });
+      input.checklist = input.checklist.map((item) => (
+        item.id === "before-flight" || item.id === "before-hotel" ? { ...item, done: true } : item
+      ));
 
-    input.checklist = input.checklist.map((item) => (
-      item.id === "before-flight" || item.id === "before-hotel" ? { ...item, done: true } : item
-    ));
+      const participantIds = new Set(input.participants.map((person) => person.id));
+      if (input.participants.length === 2 && participantIds.has("person-me") && participantIds.has("person-companion")) {
+        input.participants.push(
+          { id: "person-companion-2", name: "동행 2", active: true, createdAt: new Date().toISOString() },
+          { id: "person-companion-3", name: "동행 3", active: true, createdAt: new Date().toISOString() }
+        );
+      }
+      input.meta.appliedMigrations.push(ITINERARY_MIGRATION);
+    }
 
-    const participantIds = new Set(input.participants.map((person) => person.id));
-    if (input.participants.length === 2 && participantIds.has("person-me") && participantIds.has("person-companion")) {
-      input.participants.push(
-        { id: "person-companion-2", name: "동행 2", active: true, createdAt: new Date().toISOString() },
-        { id: "person-companion-3", name: "동행 3", active: true, createdAt: new Date().toISOString() }
-      );
+    if (!input.meta.appliedMigrations.includes(PLACEHOLDER_CLEANUP_MIGRATION)) {
+      input.itinerary = input.itinerary.filter((item) => item.id !== "seed-arrival" && item.id !== "seed-departure");
+      input.meta.appliedMigrations.push(PLACEHOLDER_CLEANUP_MIGRATION);
     }
 
     input.schemaVersion = 3;
-    input.meta.appliedMigrations.push(ITINERARY_MIGRATION);
     return input;
   }
 
