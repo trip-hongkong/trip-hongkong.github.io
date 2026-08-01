@@ -26,6 +26,7 @@
   const PLACEHOLDER_CLEANUP_MIGRATION = "legacy-placeholder-cleanup-v1";
   const CHECKLIST_SCOPE_MIGRATION = "personal-checklists-v1";
   const CHECKLIST_TASKS_MIGRATION = "practical-checklists-v2";
+  const PARTICIPANT_NAMES_MIGRATION = "traveler-names-v1";
   const VALID_PLAN_STATUSES = new Set(["confirmed", "recommended", "flexible", "custom"]);
   const LEGACY_PLACEHOLDERS = [
     { id: "seed-arrival", date: "2026-08-15", time: "", title: "홍콩 도착", place: "", note: "항공편 확정 후 도착 시각과 이동 방법 입력" },
@@ -107,6 +108,8 @@
   const SECTIONS = new Set(["prepare", "trip", "settle"]);
 
   let state = loadState();
+  let cloudSync = null;
+  let sharedStateFingerprint = "";
   let toastTimer = 0;
   let weatherRequest = null;
   let rateRequest = null;
@@ -151,15 +154,15 @@
 
   function defaultState() {
     return {
-      schemaVersion: 5,
-      meta: { appliedMigrations: [ITINERARY_MIGRATION, PLACEHOLDER_CLEANUP_MIGRATION, CHECKLIST_SCOPE_MIGRATION, CHECKLIST_TASKS_MIGRATION] },
+      schemaVersion: 6,
+      meta: { appliedMigrations: [ITINERARY_MIGRATION, PLACEHOLDER_CLEANUP_MIGRATION, CHECKLIST_SCOPE_MIGRATION, CHECKLIST_TASKS_MIGRATION, PARTICIPANT_NAMES_MIGRATION] },
       checklist: checklistSeeds(),
       itinerary: TRIP_ITINERARY.map((item) => ({ ...item })),
       participants: [
-        { id: "person-me", name: "나", active: true, createdAt: new Date().toISOString() },
-        { id: "person-companion", name: "동행 1", active: true, createdAt: new Date().toISOString() },
-        { id: "person-companion-2", name: "동행 2", active: true, createdAt: new Date().toISOString() },
-        { id: "person-companion-3", name: "동행 3", active: true, createdAt: new Date().toISOString() }
+        { id: "person-me", name: "민제", active: true, createdAt: new Date().toISOString() },
+        { id: "person-companion", name: "준호", active: true, createdAt: new Date().toISOString() },
+        { id: "person-companion-2", name: "주영", active: true, createdAt: new Date().toISOString() },
+        { id: "person-companion-3", name: "준혁", active: true, createdAt: new Date().toISOString() }
       ],
       expenses: [],
       weatherCache: null,
@@ -496,9 +499,28 @@
       input.meta.appliedMigrations.push(CHECKLIST_TASKS_MIGRATION);
     }
 
+    if (!input.meta.appliedMigrations.includes(PARTICIPANT_NAMES_MIGRATION)) {
+      const travelerNames = {
+        "person-me": ["나", "민제"],
+        "person-companion": ["동행 1", "준호"],
+        "person-companion-2": ["동행 2", "주영"],
+        "person-companion-3": ["동행 3", "준혁"]
+      };
+      const replacementNames = {
+        "person-me": "민제",
+        "person-companion": "준호",
+        "person-companion-2": "주영",
+        "person-companion-3": "준혁"
+      };
+      input.participants = input.participants.map((person) => (
+        travelerNames[person.id]?.includes(person.name) ? { ...person, name: replacementNames[person.id] } : person
+      ));
+      input.meta.appliedMigrations.push(PARTICIPANT_NAMES_MIGRATION);
+    }
+
     input.checklist = normalizeChecklistScopes(input.checklist);
 
-    input.schemaVersion = 5;
+    input.schemaVersion = 6;
     return input;
   }
 
@@ -509,7 +531,7 @@
     const participants = sanitizeParticipants(input.participants, base.participants);
     const ui = input.ui && typeof input.ui === "object" ? input.ui : {};
     return {
-      schemaVersion: 5,
+      schemaVersion: 6,
       meta: sanitizeMeta(input.meta),
       checklist: sanitizeChecklist(input.checklist, base.checklist),
       itinerary: sanitizeItinerary(input.itinerary, base.itinerary),
@@ -549,9 +571,50 @@
     return defaultState();
   }
 
+  function getSharedState() {
+    return {
+      checklist: state.checklist,
+      itinerary: state.itinerary,
+      participants: state.participants,
+      expenses: state.expenses
+    };
+  }
+
+  function fingerprintSharedState(shared = getSharedState()) {
+    return JSON.stringify(shared);
+  }
+
+  async function applySharedState(shared) {
+    if (!shared || typeof shared !== "object") return;
+    state = normalizeState({
+      ...state,
+      checklist: shared.checklist,
+      itinerary: shared.itinerary,
+      participants: shared.participants,
+      expenses: shared.expenses,
+      weatherCache: state.weatherCache,
+      rateCache: state.rateCache,
+      ui: state.ui,
+      meta: state.meta
+    });
+    sharedStateFingerprint = fingerprintSharedState();
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch (error) {
+      console.warn("공용 데이터를 이 기기에 보관하지 못했습니다.", error);
+    }
+    renderPage();
+  }
+
   function saveState(notify = true) {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      const shared = getSharedState();
+      const nextFingerprint = fingerprintSharedState(shared);
+      if (nextFingerprint !== sharedStateFingerprint) {
+        sharedStateFingerprint = nextFingerprint;
+        if (cloudSync?.isReady()) cloudSync.queueReplace(shared);
+      }
       if (notify) showToast("저장했습니다");
     } catch (error) {
       console.warn("저장하지 못했습니다.", error);
@@ -1307,7 +1370,7 @@
         receipt.dataset.id = expense.id;
         receipt.setAttribute("aria-label", `${expense.description} 영수증 보기`);
         tools.append(receipt);
-        getReceipt(expense.id).then((record) => {
+        getAvailableReceipt(expense.id).then((record) => {
           if (!record || !record.blob || !receipt.isConnected) return;
           const url = URL.createObjectURL(record.blob);
           thumbUrls.add(url);
@@ -1552,6 +1615,18 @@
     });
   }
 
+  async function getAvailableReceipt(expenseId) {
+    const local = await getReceipt(expenseId).catch(() => null);
+    if (local?.blob || !cloudSync?.isReady()) return local;
+    const remote = await cloudSync.downloadReceipt(expenseId).catch((error) => {
+      console.warn("공용 영수증을 내려받지 못했습니다.", error);
+      return null;
+    });
+    if (!remote?.blob) return null;
+    await putReceipt(expenseId, remote.blob, remote.name || "receipt.jpg").catch(() => {});
+    return remote;
+  }
+
   async function deleteReceipt(expenseId) {
     return withReceiptStore("readwrite", (store) => store.delete(expenseId));
   }
@@ -1573,7 +1648,7 @@
 
   async function showReceipt(expenseId) {
     try {
-      const record = await getReceipt(expenseId);
+      const record = await getAvailableReceipt(expenseId);
       if (!record || !record.blob) {
         showToast("저장된 영수증을 찾지 못했습니다", true);
         return;
@@ -2005,6 +2080,7 @@
     });
   }
 
+  sharedStateFingerprint = fingerprintSharedState();
   applyTheme(themePreference(), false);
   renderPage();
   bindEvents();
@@ -2015,4 +2091,16 @@
   }
   if (PAGE === "home" || PAGE === "trip" || PAGE === "all") fetchWeather(false);
   if (PAGE === "home" || PAGE === "settle" || PAGE === "all") fetchRate(false);
+  if (globalThis.TripCloudSync?.create) {
+    cloudSync = globalThis.TripCloudSync.create({
+      getSharedState,
+      applySharedState,
+      getLocalReceipt: getReceipt,
+      showToast
+    });
+    cloudSync.init().catch((error) => {
+      console.warn("공용 저장을 시작하지 못했습니다.", error);
+      showToast("공용 저장 연결을 확인해 주세요", true);
+    });
+  }
 })();
