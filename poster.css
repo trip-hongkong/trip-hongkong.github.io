@@ -2261,3 +2261,67 @@ html[data-theme] .calm-ui .day-tab[aria-selected="true"] {
   }
   .calm-ui #expenseFilter { width: 100%; min-width: 0; }
 }
+
+/* Currency converter: the swap control changes the real input direction. */
+.calm-ui .converter {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: stretch;
+  gap: 8px;
+}
+.calm-ui .converter-field { min-width: 0; }
+.calm-ui .converter-field > span {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 7px;
+}
+.calm-ui .converter-role {
+  padding: 4px 7px;
+  color: var(--muted);
+  background: var(--paper-warm);
+  border-radius: 999px;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1;
+}
+.calm-ui .converter-field.is-source .converter-role {
+  color: var(--accent-strong);
+  background: var(--accent-soft);
+}
+.calm-ui .converter-field > div { min-height: 54px; padding-inline: 14px; }
+.calm-ui .converter-field.is-source > div {
+  background: var(--paper);
+  box-shadow: inset 0 0 0 1px var(--accent-line);
+}
+.calm-ui .converter-field.is-target > div { background: var(--paper-warm); }
+.calm-ui .converter input {
+  min-height: 48px;
+  font-size: 18px;
+  font-weight: 650;
+}
+.calm-ui .converter-field.is-target input { color: var(--muted); cursor: default; }
+.calm-ui .converter > .converter-swap {
+  width: 44px;
+  height: 44px;
+  margin: -2px 0;
+  justify-self: center;
+  color: var(--accent-strong);
+  background: var(--accent-soft);
+  border-radius: 50%;
+  transform: none;
+  touch-action: manipulation;
+}
+.calm-ui .converter-swap span { display: block; font-size: 18px; line-height: 1; }
+
+html[data-theme="dark"] .calm-ui .converter-field.is-source > div {
+  background: var(--paper);
+  border-color: var(--accent-line);
+}
+html[data-theme="dark"] .calm-ui .converter-field.is-target > div { background: var(--paper-warm); }
+
+@media (max-width: 760px) {
+  .calm-ui .converter input { font-size: 18px; }
+  .calm-ui .converter > .converter-swap { margin-block: 0; }
+}
