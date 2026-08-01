@@ -1765,3 +1765,191 @@ html { background: var(--cream); }
   .calm-ui .converter { grid-template-columns: 1fr; }
   .calm-ui .converter > button { justify-self: center; margin: 0; transform: rotate(90deg); }
 }
+
+/* Apple-like surfaces + complete light/dark appearance.
+   The hero remains photographic; the app below uses neutral system surfaces. */
+:root,
+html[data-theme="light"] {
+  color-scheme: light;
+  --cream: #f5f5f7;
+  --paper: #ffffff;
+  --paper-warm: #f5f5f7;
+  --ink: #1d1d1f;
+  --ink-soft: #3a3a3c;
+  --muted: #6e6e73;
+  --line: rgba(60, 60, 67, .13);
+  --line-dark: rgba(60, 60, 67, .26);
+  --shadow: 0 18px 48px rgba(0, 0, 0, .08);
+  --shadow-small: 0 8px 26px rgba(0, 0, 0, .055);
+}
+
+html[data-theme="light"],
+html[data-theme="light"] .calm-ui { background: #f5f5f7; }
+
+html[data-theme="light"] .calm-ui .checklist-card,
+html[data-theme="light"] .calm-ui .weather-card,
+html[data-theme="light"] .calm-ui .map-card {
+  background: #fff;
+  border-color: var(--line);
+}
+
+.calm-ui .theme-toggle { display: inline-flex; align-items: center; justify-content: center; gap: 7px; }
+.calm-ui .theme-toggle-icon { width: 16px; font-size: 15px; line-height: 1; text-align: center; }
+.calm-ui .theme-toggle-label { font-size: 11px; }
+
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --cream: #000000;
+  --paper: #1c1c1e;
+  --paper-warm: #2c2c2e;
+  --ink: #f5f5f7;
+  --ink-soft: #d1d1d6;
+  --muted: #a1a1a6;
+  --line: rgba(235, 235, 245, .15);
+  --line-dark: rgba(235, 235, 245, .28);
+  --red: #ff453a;
+  --red-dark: #ff6961;
+  --red-soft: rgba(255, 69, 58, .16);
+  --jade: #5ac8a7;
+  --jade-soft: rgba(48, 209, 88, .15);
+  --gold: #d6a95f;
+  --gold-soft: #f2d69a;
+  --shadow: 0 18px 50px rgba(0, 0, 0, .30);
+  --shadow-small: 0 8px 28px rgba(0, 0, 0, .22);
+}
+
+html[data-theme="dark"],
+html[data-theme="dark"] .calm-ui,
+html[data-theme="dark"] .calm-ui main { background: #000; }
+html[data-theme="dark"] .calm-ui { color: var(--ink); }
+html[data-theme="dark"] .calm-ui .hero { background: #07131b; }
+
+/* The boarding pass is a graphic object, so it keeps its paper treatment in both modes. */
+html[data-theme="dark"] .calm-ui .boarding-card {
+  --ink: #102836;
+  --muted: #697673;
+  --line: rgba(16, 40, 54, .12);
+  --line-dark: rgba(16, 40, 54, .27);
+  --red: #b72e35;
+  --red-dark: #8f2027;
+  color-scheme: light;
+  color: var(--ink);
+  background: rgba(255, 253, 248, .96);
+}
+
+html[data-theme="dark"] .calm-ui .phase-switcher,
+html[data-theme="dark"] .calm-ui .phase-tabs,
+html[data-theme="dark"] .calm-ui .day-switcher { background: #2c2c2e; }
+html[data-theme="dark"] .calm-ui .phase-tab:hover { background: rgba(255, 255, 255, .07); }
+html[data-theme="dark"] .calm-ui .phase-tab[aria-selected="true"],
+html[data-theme="dark"] .calm-ui .day-tab[aria-selected="true"] {
+  color: var(--ink);
+  background: #48484a;
+  box-shadow: 0 1px 5px rgba(0, 0, 0, .45);
+}
+
+html[data-theme="dark"] .calm-ui .card,
+html[data-theme="dark"] .calm-ui .plain-card,
+html[data-theme="dark"] .calm-ui .booking-card,
+html[data-theme="dark"] .calm-ui .route-overview,
+html[data-theme="dark"] .calm-ui .settlement-summary article,
+html[data-theme="dark"] .calm-ui .archive-card,
+html[data-theme="dark"] .calm-ui .modal {
+  color: var(--ink);
+  background: #1c1c1e;
+  border-color: var(--line);
+  box-shadow: var(--shadow-small);
+}
+
+html[data-theme="dark"] .calm-ui .checklist-card,
+html[data-theme="dark"] .calm-ui .weather-card,
+html[data-theme="dark"] .calm-ui .map-card { background: #1c1c1e; border-color: var(--line); }
+
+html[data-theme="dark"] .calm-ui .booking-facts,
+html[data-theme="dark"] .calm-ui .poster-saved-list .saved-place,
+html[data-theme="dark"] .calm-ui .current-weather,
+html[data-theme="dark"] .calm-ui .weather-day,
+html[data-theme="dark"] .calm-ui .transfer-row,
+html[data-theme="dark"] .calm-ui .rate-display,
+html[data-theme="dark"] .calm-ui .converter label > div,
+html[data-theme="dark"] .calm-ui .balance-chip,
+html[data-theme="dark"] .calm-ui .person-pill,
+html[data-theme="dark"] .calm-ui .rate-snapshot,
+html[data-theme="dark"] .calm-ui .receipt-preview,
+html[data-theme="dark"] .calm-ui .plan-status.is-flexible,
+html[data-theme="dark"] .calm-ui .split-person {
+  color: var(--ink-soft);
+  background: #2c2c2e;
+  border-color: var(--line);
+}
+
+html[data-theme="dark"] .calm-ui .current-weather > span,
+html[data-theme="dark"] .calm-ui .person-pill button,
+html[data-theme="dark"] .calm-ui .modal-close,
+html[data-theme="dark"] .calm-ui .muted-badge,
+html[data-theme="dark"] .calm-ui .secondary-button,
+html[data-theme="dark"] .calm-ui .archive-card .secondary-button {
+  color: var(--ink-soft);
+  background: #3a3a3c;
+  border-color: transparent;
+}
+
+html[data-theme="dark"] .calm-ui input,
+html[data-theme="dark"] .calm-ui select,
+html[data-theme="dark"] .calm-ui textarea,
+html[data-theme="dark"] .calm-ui #expenseFilter {
+  color: var(--ink);
+  background: #2c2c2e;
+  border-color: transparent;
+}
+html[data-theme="dark"] .calm-ui input::placeholder,
+html[data-theme="dark"] .calm-ui textarea::placeholder { color: #8e8e93; }
+
+html[data-theme="dark"] .calm-ui .timeline-marker::before { background: #1c1c1e; }
+html[data-theme="dark"] .calm-ui .checklist-progress { background: rgba(255, 255, 255, .13); }
+html[data-theme="dark"] .calm-ui .balance-chip b,
+html[data-theme="dark"] .calm-ui .receipt-preview div strong { color: var(--ink); }
+html[data-theme="dark"] .calm-ui .settlement-summary .summary-balance {
+  color: #fff;
+  background: #102d3a;
+  border-color: rgba(255, 255, 255, .08);
+}
+html[data-theme="dark"] .calm-ui .settlement-summary .summary-balance strong { color: #fff; }
+
+html[data-theme="dark"] .calm-ui .hotel-card {
+  color: #fff;
+  background: radial-gradient(circle at 92% 8%, rgba(242, 214, 154, .15), transparent 12rem), #185445;
+  border-color: rgba(255, 255, 255, .08);
+}
+html[data-theme="dark"] .calm-ui .mobile-next-card {
+  background: radial-gradient(circle at 100% 0, rgba(242, 214, 154, .14), transparent 12rem), #185445;
+}
+html[data-theme="dark"] .calm-ui .hotel-card .primary-button { color: #1d1d1f; background: var(--gold-soft); border-color: var(--gold-soft); }
+html[data-theme="dark"] .calm-ui .hotel-card .secondary-button { color: #fff; background: transparent; border-color: rgba(255, 255, 255, .28); }
+html[data-theme="dark"] .calm-ui .archive-card .danger-button { color: #ff6961; background: rgba(255, 69, 58, .15); border-color: transparent; }
+
+html[data-theme="dark"] .calm-ui .footer {
+  color: var(--muted);
+  background: #1c1c1e;
+  border-top-color: var(--line);
+}
+html[data-theme="dark"] .calm-ui .modal::backdrop { background: rgba(0, 0, 0, .68); }
+html[data-theme="dark"] .calm-ui .receipt-dialog { background: #09090a; }
+html[data-theme="dark"] { scrollbar-color: #48484a #1c1c1e; }
+
+@media (max-width: 760px) {
+  .calm-ui .theme-toggle { width: 44px; min-width: 44px; padding: 0; }
+  .calm-ui .theme-toggle-label { display: none; }
+  html[data-theme="light"] .calm-ui .day-switcher-wrap { background: rgba(245, 245, 247, .94); }
+  html[data-theme="dark"] .calm-ui .day-switcher-wrap { background: rgba(0, 0, 0, .90); }
+  html[data-theme="dark"] .calm-ui .mobile-phase-nav {
+    color: var(--muted);
+    background: rgba(28, 28, 30, .94);
+    border-top-color: var(--line);
+    box-shadow: 0 -10px 30px rgba(0, 0, 0, .34);
+  }
+  html[data-theme="dark"] .calm-ui .modal-actions {
+    background: rgba(28, 28, 30, .97);
+    box-shadow: 0 -10px 24px rgba(0, 0, 0, .24);
+  }
+}
