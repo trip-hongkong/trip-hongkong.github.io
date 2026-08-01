@@ -2679,3 +2679,100 @@ html[data-theme="dark"] .calm-ui .cloud-join-card > p.is-error { color: #ff6961;
   .calm-ui .cloud-status-button { min-width: 44px; width: 44px; padding: 0; }
   .calm-ui .cloud-status-button span { display: none; }
 }
+
+/* Selected itinerary day: compact hourly forecast strip. */
+.calm-ui .hourly-weather-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 18px 0 9px;
+}
+.calm-ui .hourly-weather-heading strong {
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 750;
+}
+.calm-ui .hourly-weather-heading span {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 650;
+}
+.calm-ui .hourly-weather {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(88px, 1fr);
+  gap: 7px;
+  padding-bottom: 3px;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+  overscroll-behavior-inline: contain;
+}
+.calm-ui .hourly-weather::-webkit-scrollbar { display: none; }
+.calm-ui .hourly-weather-item {
+  display: grid;
+  min-height: 112px;
+  padding: 11px 8px;
+  align-content: start;
+  justify-items: center;
+  text-align: center;
+  background: rgba(255, 255, 255, .72);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  scroll-snap-align: start;
+}
+.calm-ui .hourly-weather-item time {
+  color: var(--muted);
+  font: 650 10px/1.2 var(--latin);
+}
+.calm-ui .hourly-weather-icon {
+  margin: 8px 0 3px;
+  font-size: 21px;
+  line-height: 1;
+}
+.calm-ui .hourly-weather-item strong {
+  color: var(--ink);
+  font-size: 17px;
+  line-height: 1.2;
+}
+.calm-ui .hourly-weather-item small {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 9px;
+  line-height: 1.35;
+  white-space: nowrap;
+}
+.calm-ui .hourly-weather-empty {
+  display: flex;
+  min-height: 78px;
+  padding: 14px;
+  flex-direction: column;
+  justify-content: center;
+  color: var(--muted);
+  background: var(--paper-warm);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+}
+.calm-ui .hourly-weather-empty strong {
+  color: var(--ink-soft);
+  font-size: 12px;
+}
+.calm-ui .hourly-weather-empty span {
+  margin-top: 3px;
+  font-size: 10px;
+}
+html[data-theme="dark"] .calm-ui .hourly-weather-item,
+html[data-theme="dark"] .calm-ui .hourly-weather-empty {
+  background: #2c2c2e;
+  border-color: var(--line);
+}
+
+@media (max-width: 760px) {
+  .calm-ui .hourly-weather {
+    grid-auto-columns: 88px;
+    margin-inline: -20px;
+    padding-inline: 20px;
+    scroll-padding-inline: 20px;
+    scroll-snap-type: x mandatory;
+  }
+}
