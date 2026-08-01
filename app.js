@@ -43,15 +43,15 @@
     { id: "trip-kowloon-park", date: "2026-08-17", time: "09:30", status: "flexible", title: "구룡채성 공원", place: "Kowloon Walled City Park Hong Kong", note: "오전 야외 일정 · 비가 많이 오면 실내 일정으로 변경" },
     { id: "trip-west-kowloon", date: "2026-08-17", time: "14:00", status: "flexible", title: "서구룡 · M+", place: "M+ Museum Hong Kong", note: "비 오는 날에도 가능한 실내 일정" },
     { id: "trip-k11", date: "2026-08-17", time: "18:00", status: "flexible", title: "K11 MUSEA · 침사추이", place: "K11 MUSEA Hong Kong", note: "저녁 식사와 쇼핑 · 전날 못 본 야경 보완" },
-    { id: "trip-royal-checkout", date: "2026-08-18", time: "09:00", status: "recommended", title: "Royal Plaza Hotel 체크아웃", place: "Royal Plaza Hotel Hong Kong", note: "권장 시각 · 객실 1실, 3박 종료" },
+    { id: "trip-royal-checkout", date: "2026-08-18", time: "09:00", status: "recommended", title: "Royal Plaza Hotel 체크아웃", place: "Royal Plaza Hotel Hong Kong", note: "객실 1실 · 3박 종료" },
     { id: "trip-hzmb-hk", date: "2026-08-18", time: "09:30", status: "recommended", title: "HZMB 홍콩구안으로 이동", place: "HZMB Hong Kong Port", note: "큰 짐이 있으면 택시 또는 6인승 차량 검토" },
-    { id: "trip-gold-bus", date: "2026-08-18", time: "11:10", status: "recommended", title: "금바로 마카오 이동", place: "HZMB Macao Port", note: "권장편 · 출입경 포함 전체 이동 3–4시간 예상" },
+    { id: "trip-gold-bus", date: "2026-08-18", time: "11:10", status: "recommended", title: "금바로 마카오 이동", place: "HZMB Macao Port", note: "출입경 포함 전체 이동 3–4시간 예상" },
     { id: "trip-broadway-checkin", date: "2026-08-18", time: "13:30", status: "recommended", title: "Broadway Hotel 도착", place: "Broadway Hotel Macau", note: "Broadway King 2실 · 성인 4명 · 조식 불포함" },
     { id: "trip-macau-old-town", date: "2026-08-18", time: "15:00", status: "flexible", title: "마카오 구시가지", place: "Senado Square Macau", note: "세나도 광장 · 성바울 유적 · 몬테요새" },
     { id: "trip-cotai", date: "2026-08-18", time: "19:30", status: "flexible", title: "코타이 야경", place: "Galaxy Macau", note: "Galaxy · Broadway 주변에서 저녁" },
-    { id: "trip-broadway-checkout", date: "2026-08-19", time: "10:20", status: "recommended", title: "Broadway Hotel 체크아웃", place: "Broadway Hotel Macau", note: "권장 시각 · 객실 2실, 1박 종료" },
+    { id: "trip-broadway-checkout", date: "2026-08-19", time: "10:20", status: "recommended", title: "Broadway Hotel 체크아웃", place: "Broadway Hotel Macau", note: "객실 2실 · 1박 종료" },
     { id: "trip-macau-port", date: "2026-08-19", time: "11:15", status: "recommended", title: "마카오구안 도착 · 상류 체크인", place: "HZMB Macao Port", note: "HKIA 직행버스 카운터 · 이용 가능 여부와 수하물 연결 사전 확인" },
-    { id: "trip-skypier-coach", date: "2026-08-19", time: "12:30", status: "recommended", title: "HKIA SkyPier 직행버스", place: "Hong Kong International Airport SkyPier", note: "권장편 · 별도 예약 필요 · 예상 도착 13:15" },
+    { id: "trip-skypier-coach", date: "2026-08-19", time: "12:30", status: "recommended", title: "HKIA SkyPier 직행버스", place: "Hong Kong International Airport SkyPier", note: "별도 예약 필요 · 예상 도착 13:15" },
     { id: "trip-cx430-depart", date: "2026-08-19", time: "17:40", status: "confirmed", title: "CX430 홍콩 출발", place: "홍콩국제공항 제1터미널", note: "캐세이퍼시픽 · Economy Light · 이코노미 · 위탁 수하물 1개" },
     { id: "trip-cx430-arrive", date: "2026-08-19", time: "22:25", status: "confirmed", title: "인천 도착", place: "인천국제공항 제1터미널", note: "비행시간 3시간 45분" }
   ];
@@ -611,10 +611,8 @@
       const now = new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Hong_Kong", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(new Date());
       next = items.find((item) => !item.time || item.time >= now) || items[items.length - 1];
     }
-    const labels = { confirmed: "확정", recommended: "권장", flexible: "선택", custom: "추가" };
     if ($("#mobileNextLabel")) $("#mobileNextLabel").textContent = day.date === today ? "NEXT" : `DAY ${day.day}`;
     if ($("#mobileNextTime")) $("#mobileNextTime").textContent = next.time || "미정";
-    if ($("#mobileNextStatus")) $("#mobileNextStatus").textContent = labels[next.status] || "일정";
     if ($("#mobileNextTitle")) $("#mobileNextTitle").textContent = next.title;
     if ($("#mobileNextMeta")) $("#mobileNextMeta").textContent = next.place || next.note || "세부 정보 없음";
     const map = $("#mobileNextMap");
@@ -646,10 +644,6 @@
       const copy = createElement("div", "timeline-copy");
       const titleRow = createElement("div", "timeline-title-row");
       titleRow.append(createElement("h3", "", item.title));
-      if (item.status && item.status !== "custom") {
-        const labels = { confirmed: "확정", recommended: "권장", flexible: "선택" };
-        titleRow.append(createElement("span", `plan-status is-${item.status}`, labels[item.status] || ""));
-      }
       copy.append(titleRow);
       if (item.note) copy.append(createElement("p", "", item.note));
       if (item.place) {
