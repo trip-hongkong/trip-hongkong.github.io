@@ -1698,7 +1698,7 @@
 
     window.addEventListener("hashchange", () => {
       const section = window.location.hash.replace(/^#/, "");
-      if (SECTIONS.has(section)) activateSection(section, false, false);
+      if (SECTIONS.has(section)) activateSection(section, false, true);
     });
     THEME_MEDIA.addEventListener?.("change", () => {
       if (themePreference() === "system") applyTheme("system", false);
@@ -1724,12 +1724,9 @@
   renderPage();
   bindEvents();
   if (PAGE === "all") {
+    const requestedSection = window.location.hash.replace(/^#/, "");
     const initialSection = sectionFromHash();
-    activateSection(initialSection, false, false);
-    if (window.matchMedia("(max-width: 760px)").matches && SECTIONS.has(window.location.hash.slice(1))) {
-      const behavior = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
-      window.requestAnimationFrame(() => $(`.phase-panel[data-panel="${initialSection}"]`)?.scrollIntoView({ behavior, block: "start" }));
-    }
+    activateSection(initialSection, false, SECTIONS.has(requestedSection));
   }
   if (PAGE === "home" || PAGE === "trip" || PAGE === "all") fetchWeather(false);
   if (PAGE === "home" || PAGE === "settle" || PAGE === "all") fetchRate(false);
