@@ -4,6 +4,19 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#f5f5f7">
+  <script>
+    (() => {
+      let preference = "system";
+      try {
+        const saved = localStorage.getItem("trip-hongkong-theme");
+        if (saved === "light" || saved === "dark") preference = saved;
+      } catch (error) {}
+      const isDark = preference === "dark" || (preference === "system" && matchMedia("(prefers-color-scheme: dark)").matches);
+      document.documentElement.dataset.theme = isDark ? "dark" : "light";
+      document.documentElement.dataset.themePreference = preference;
+      document.querySelector('meta[name="theme-color"]').content = isDark ? "#000000" : "#f5f5f7";
+    })();
+  </script>
   <meta name="description" content="2026년 8월 홍콩 여행 준비, 일정, 날씨, 지도와 정산을 한 페이지에서 확인하는 여행 페이지">
   <meta property="og:type" content="website">
   <meta property="og:title" content="Hong Kong 2026">
@@ -16,8 +29,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css?v=20260801-7">
-  <link rel="stylesheet" href="poster.css?v=20260801-11">
-  <script defer src="app.js?v=20260801-11"></script>
+  <link rel="stylesheet" href="poster.css?v=20260801-13">
+  <script defer src="app.js?v=20260801-13"></script>
 </head>
 <body class="calm-ui" data-page="all">
   <a class="skip-link" href="#main">본문으로 바로가기</a>
@@ -33,6 +46,7 @@
         <span>TRIP ARCHIVE</span>
       </a>
       <div class="topbar-actions">
+        <button class="glass-button theme-toggle" type="button" data-action="toggle-theme" aria-label="다크 모드로 전환"><span class="theme-toggle-icon" aria-hidden="true">☾</span><span class="theme-toggle-label">다크</span></button>
         <a class="glass-button" href="https://maps.app.goo.gl/c4aqxDU5yhHmMNfu5?g_st=ac" target="_blank" rel="noopener noreferrer">공유 지도 ↗</a>
         <button class="glass-button" type="button" data-action="export">백업</button>
       </div>
@@ -211,13 +225,13 @@
 
         <div class="content-grid settle-layout">
           <section class="main-column">
-            <article class="card plain-card settlement-panel">
-              <div class="card-heading card-title-row"><div><p class="card-label">WHO PAYS WHOM</p><h3>보낼 금액</h3></div><span class="status-pill" id="transferCount">0건</span></div>
-              <div id="transferList" class="transfer-list"></div><div id="balanceList" class="balance-list"></div>
-            </article>
             <article class="card plain-card expense-panel">
               <div class="card-heading card-title-row"><div><p class="card-label">EXPENSES</p><h3>지출 내역</h3></div><select id="expenseFilter" aria-label="통화별 지출 필터"><option value="all">전체 통화</option><option value="HKD">HKD</option><option value="KRW">KRW</option></select></div>
               <div id="expenseList" class="expense-list"></div>
+            </article>
+            <article class="card plain-card settlement-panel">
+              <div class="card-heading card-title-row"><div><p class="card-label">WHO PAYS WHOM</p><h3>보낼 금액</h3></div><span class="status-pill" id="transferCount">0건</span></div>
+              <div id="transferList" class="transfer-list"></div><div id="balanceList" class="balance-list"></div>
             </article>
           </section>
 
