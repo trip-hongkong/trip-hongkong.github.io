@@ -558,10 +558,38 @@
       button.dataset.date = day.date;
       button.setAttribute("aria-selected", String(day.date === state.ui.activeDate));
       button.setAttribute("aria-controls", "timeline");
+      button.setAttribute("aria-label", `8월 ${day.number}일 ${day.weekdayLong}, ${day.day}일차`);
       button.tabIndex = day.date === state.ui.activeDate ? 0 : -1;
       button.append(createElement("strong", "", day.number), createElement("span", "", day.weekday));
       container.append(button);
     });
+  }
+
+  function renderMobileNext(items, day) {
+    const card = $("#mobileNextCard");
+    if (!card) return;
+    if (!items.length) {
+      card.hidden = true;
+      return;
+    }
+    card.hidden = false;
+    const today = todayInHongKong();
+    let next = items[0];
+    if (day.date === today) {
+      const now = new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Hong_Kong", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(new Date());
+      next = items.find((item) => !item.time || item.time >= now) || items[items.length - 1];
+    }
+    const labels = { confirmed: "확정", recommended: "권장", flexible: "선택", custom: "추가" };
+    if ($("#mobileNextLabel")) $("#mobileNextLabel").textContent = day.date === today ? "NEXT" : `DAY ${day.day}`;
+    if ($("#mobileNextTime")) $("#mobileNextTime").textContent = next.time || "미정";
+    if ($("#mobileNextStatus")) $("#mobileNextStatus").textContent = labels[next.status] || "일정";
+    if ($("#mobileNextTitle")) $("#mobileNextTitle").textContent = next.title;
+    if ($("#mobileNextMeta")) $("#mobileNextMeta").textContent = next.place || next.note || "세부 정보 없음";
+    const map = $("#mobileNextMap");
+    if (map) {
+      map.hidden = !next.place;
+      if (next.place) map.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(next.place)}`;
+    }
   }
 
   function renderTimeline() {
@@ -572,6 +600,7 @@
     if ($("#selectedDayEnglish")) $("#selectedDayEnglish").textContent = day.weekdayLong;
     if ($("#selectedDayTitle")) $("#selectedDayTitle").textContent = `8월 ${day.number}일 · ${day.weekday}요일`;
     const items = state.itinerary.filter((item) => item.date === day.date).sort((a, b) => (a.time || "99:99").localeCompare(b.time || "99:99"));
+    renderMobileNext(items, day);
     timeline.replaceChildren();
     if (!items.length) {
       timeline.append(createElement("p", "empty-state", "등록된 일정이 없습니다."));
@@ -708,6 +737,15 @@
     const updated = $("#weatherUpdated");
     if (updated) {
       updated.textContent = state.weatherCache ? `${stale ? "저장된 예보" : "업데이트"} · ${new Intl.DateTimeFormat("ko-KR", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(state.weatherCache.fetchedAt))}` : "Open-Meteo";
+    }
+    if (window.matchMedia("(max-width: 760px)").matches) {
+      window.requestAnimationFrame(() => {
+        const selected = $(".weather-day.is-selected", days);
+        if (!selected) return;
+        const left = Math.max(0, selected.offsetLeft - (days.clientWidth - selected.clientWidth) / 2);
+        const behavior = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
+        days.scrollTo({ left, behavior });
+      });
     }
   }
 
@@ -1031,12 +1069,18 @@
       const active = button.dataset.section === next;
       button.setAttribute("aria-selected", String(active));
       if (button.classList.contains("phase-tab")) button.tabIndex = active ? 0 : -1;
+      if (button.closest(".mobile-phase-nav")) {
+        if (active) button.setAttribute("aria-current", "page");
+        else button.removeAttribute("aria-current");
+      }
     });
     document.body.dataset.activeSection = next;
     if (updateHash) history.replaceState(null, "", `${window.location.pathname}${window.location.search}#${next}`);
     if (scrollToTabs) {
-      const tabs = $(".phase-switcher");
-      if (tabs) window.requestAnimationFrame(() => tabs.scrollIntoView({ behavior: "smooth", block: "start" }));
+      const isMobile = window.matchMedia("(max-width: 760px)").matches;
+      const target = isMobile ? $(`.phase-panel[data-panel="${next}"]`) : $(".phase-switcher");
+      const behavior = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
+      if (target) window.requestAnimationFrame(() => target.scrollIntoView({ behavior, block: "start" }));
     }
   }
 
@@ -1283,13 +1327,14 @@
     }
     const expenseId = makeId("expense");
     const submit = $("#expenseSubmit");
+    const receiptFile = pendingReceiptFile;
     submit.disabled = true;
-    submit.textContent = pendingReceiptFile ? "사진 저장 중" : "저장 중";
+    submit.textContent = receiptFile ? "사진 저장 중" : "저장 중";
     let receiptSaved = false;
     try {
-      if (pendingReceiptFile) {
-        const blob = await compressReceipt(pendingReceiptFile);
-        await putReceipt(expenseId, blob, pendingReceiptFile.name);
+      if (receiptFile) {
+        const blob = await compressReceipt(receiptFile);
+        await putReceipt(expenseId, blob, receiptFile.name);
         receiptSaved = true;
       }
       const fxRateMicros = currency === "HKD" ? Math.round(rate * 1_000_000) : 0;
@@ -1462,7 +1507,7 @@
     }
     const dateButton = event.target.closest(".day-tab[data-date]");
     if (dateButton) {
-      setActiveDate(dateButton.dataset.date);
+      setActiveDate(dateButton.dataset.date, true);
       return;
     }
     const copyButton = event.target.closest("[data-copy]");
@@ -1479,7 +1524,14 @@
     if (action === "open-itinerary") openItineraryDialog();
     if (action === "close-itinerary") closeDialog("#itineraryDialog");
     if (action === "open-expense") openExpenseDialog();
-    if (action === "close-expense") { closeDialog("#expenseDialog"); clearPendingReceipt(); }
+    if (action === "close-expense") {
+      if ($("#expenseSubmit")?.disabled) {
+        showToast("저장 중입니다. 잠시만 기다려 주세요.");
+        return;
+      }
+      closeDialog("#expenseDialog");
+      clearPendingReceipt();
+    }
     if (action === "close-receipt") closeReceipt();
     if (action === "view-receipt") showReceipt(id);
     if (action === "remove-person") removeParticipant(id);
@@ -1571,9 +1623,16 @@
     $("#importFile")?.addEventListener("change", (event) => importData(event.target.files?.[0]));
 
     $$("dialog").forEach((dialog) => {
+      dialog.addEventListener("close", () => {
+        if (dialog.id === "expenseDialog" && !$("#expenseSubmit")?.disabled) clearPendingReceipt();
+      });
+      dialog.addEventListener("cancel", (event) => {
+        if (dialog.id === "expenseDialog" && $("#expenseSubmit")?.disabled) event.preventDefault();
+      });
       dialog.addEventListener("click", (event) => {
         if (event.target !== dialog) return;
         if (dialog.id === "receiptDialog") closeReceipt();
+        else if (dialog.id === "expenseDialog" && $("#expenseSubmit")?.disabled) showToast("저장 중입니다. 잠시만 기다려 주세요.");
         else { dialog.close(); if (dialog.id === "expenseDialog") clearPendingReceipt(); }
       });
     });
@@ -1620,7 +1679,14 @@
 
   renderPage();
   bindEvents();
-  if (PAGE === "all") activateSection(sectionFromHash(), false, false);
+  if (PAGE === "all") {
+    const initialSection = sectionFromHash();
+    activateSection(initialSection, false, false);
+    if (window.matchMedia("(max-width: 760px)").matches && ["trip", "settle"].includes(window.location.hash.slice(1))) {
+      const behavior = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
+      window.requestAnimationFrame(() => $(`.phase-panel[data-panel="${initialSection}"]`)?.scrollIntoView({ behavior, block: "start" }));
+    }
+  }
   if (PAGE === "home" || PAGE === "trip" || PAGE === "all") fetchWeather(false);
   if (PAGE === "home" || PAGE === "settle" || PAGE === "all") fetchRate(false);
 })();
