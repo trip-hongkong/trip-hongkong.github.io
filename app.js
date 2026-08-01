@@ -11,7 +11,7 @@
   const END_DATE = "2026-08-19";
   const TIMEZONE = "Asia/Hong_Kong";
   const PAGE = document.body.dataset.page || "home";
-  const WEATHER_URL = "https://api.open-meteo.com/v1/forecast?latitude=22.3193&longitude=114.1694&timezone=Asia%2FHong_Kong&forecast_days=16&current=temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max";
+  const WEATHER_URL = "https://api.open-meteo.com/v1/forecast?latitude=22.3193&longitude=114.1694&timezone=Asia%2FHong_Kong&forecast_days=16&current=temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&hourly=temperature_2m,apparent_temperature,precipitation_probability,weather_code";
   const RATE_URL = "https://api.frankfurter.dev/v2/rate/HKD/KRW";
 
   const TRIP_DAYS = [
@@ -1058,6 +1058,7 @@
       }
       days.append(card);
     });
+    renderHourlyWeather(data);
     const updated = $("#weatherUpdated");
     if (updated) {
       updated.textContent = state.weatherCache ? `${stale ? "저장된 예보" : "업데이트"} · ${new Intl.DateTimeFormat("ko-KR", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(state.weatherCache.fetchedAt))}` : "Open-Meteo";
@@ -1073,10 +1074,61 @@
     }
   }
 
+  function renderHourlyWeather(data) {
+    const container = $("#hourlyWeather");
+    const title = $("#hourlyWeatherTitle");
+    if (!container || !title) return;
+
+    const tripDay = TRIP_DAYS.find((day) => day.date === state.ui.activeDate) || TRIP_DAYS[0];
+    title.textContent = `시간별 · 8월 ${tripDay.number}일`;
+    container.replaceChildren();
+
+    const hourly = data && data.hourly ? data.hourly : null;
+    const times = Array.isArray(hourly?.time) ? hourly.time : [];
+    const indexes = [];
+    times.forEach((stamp, index) => {
+      if (typeof stamp !== "string" || !stamp.startsWith(`${tripDay.date}T`)) return;
+      const hour = Number(stamp.slice(11, 13));
+      if (Number.isInteger(hour)) indexes.push(index);
+    });
+
+    if (!indexes.length) {
+      const empty = createElement("div", "hourly-weather-empty");
+      empty.append(
+        createElement("strong", "", "시간별 예보 제공 전"),
+        createElement("span", "", "출발 16일 전부터 순차적으로 표시됩니다")
+      );
+      container.append(empty);
+      return;
+    }
+
+    indexes.forEach((index) => {
+      const stamp = times[index];
+      const temp = Number(hourly.temperature_2m?.[index]);
+      const feels = Number(hourly.apparent_temperature?.[index]);
+      const rain = Number(hourly.precipitation_probability?.[index]);
+      const code = Number(hourly.weather_code?.[index]);
+      const info = weatherInfo(code);
+      const timeText = stamp.slice(11, 16);
+      const rainText = Number.isFinite(rain) ? `${Math.round(rain)}%` : "--";
+      const card = createElement("article", "hourly-weather-item");
+      const time = createElement("time", "", timeText);
+      time.dateTime = stamp;
+      const icon = createElement("span", "hourly-weather-icon", info.icon);
+      icon.setAttribute("aria-hidden", "true");
+      const temperature = createElement("strong", "", Number.isFinite(temp) ? `${Math.round(temp)}°` : "--");
+      const detail = createElement("small", "", `${info.label} · 강수 ${rainText}`);
+      card.setAttribute("aria-label", `${timeText}, ${info.label}, ${Number.isFinite(temp) ? Math.round(temp) + "도" : "기온 정보 없음"}, 강수확률 ${rainText}`);
+      if (Number.isFinite(feels)) card.title = `체감 ${Math.round(feels)}°`;
+      card.append(time, icon, temperature, detail);
+      container.append(card);
+    });
+  }
+
   async function fetchWeather(force = false) {
     if (weatherRequest) return weatherRequest;
     const age = state.weatherCache ? Date.now() - new Date(state.weatherCache.fetchedAt).getTime() : Infinity;
-    if (!force && state.weatherCache && age < 30 * 60 * 1000) {
+    if (!force && state.weatherCache?.data?.hourly && age < 30 * 60 * 1000) {
       renderHomeWeather(state.weatherCache.data);
       renderTripWeather(state.weatherCache.data);
       return;
