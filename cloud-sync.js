@@ -95,6 +95,7 @@
       this.started = false;
       this.maps = this.emptyMaps();
       this.receipts = new Map();
+      this.lastShared = null;
       this.boundOnline = () => this.handleOnline();
       this.boundOffline = () => this.setStatus("offline");
       this.boundVisibility = () => {
@@ -461,21 +462,43 @@
 
     queueReplace(shared) {
       if (!this.tripId || !shared) return;
+      const previous = this.lastShared || {};
+      let queuedChange = false;
       SHARED_TABLES.forEach((table) => {
         const items = Array.isArray(shared[table]) ? shared[table] : [];
+        const previousItems = new Map((Array.isArray(previous[table]) ? previous[table] : []).map((item) => [item.id, item]));
         const localIds = new Set(items.map((item) => item.id));
-        items.forEach((item, index) => this.queueUpsert(table, item, index, false));
-        this.maps[table].forEach((remoteId, localId) => {
-          if (!localIds.has(localId)) this.queueDelete(table, localId, false);
+        items.forEach((item, index) => {
+          const previousItem = previousItems.get(item.id);
+          if (!previousItem || JSON.stringify(previousItem) !== JSON.stringify(item)) {
+            queuedChange = true;
+            this.queueUpsert(table, item, index, false);
+          }
+        });
+        previousItems.forEach((item, localId) => {
+          if (!localIds.has(localId)) {
+            queuedChange = true;
+            this.queueDelete(table, localId, false);
+          }
         });
       });
       const receiptIds = new Set((shared.expenses || []).filter((item) => item.receiptId).map((item) => item.id));
-      receiptIds.forEach((id) => this.queueReceiptPut(id, "receipt.jpg", "image/jpeg", false));
-      this.receipts.forEach((metadata, id) => {
-        if (!receiptIds.has(id)) this.queueReceiptDelete(id, false);
+      const previousReceiptIds = new Set((previous.expenses || []).filter((item) => item.receiptId).map((item) => item.id));
+      receiptIds.forEach((id) => {
+        if (!previousReceiptIds.has(id)) {
+          queuedChange = true;
+          this.queueReceiptPut(id, "receipt.jpg", "image/jpeg", false);
+        }
       });
+      previousReceiptIds.forEach((id) => {
+        if (!receiptIds.has(id)) {
+          queuedChange = true;
+          this.queueReceiptDelete(id, false);
+        }
+      });
+      this.lastShared = copy(shared);
       this.persistQueue();
-      this.scheduleFlush();
+      if (queuedChange) this.scheduleFlush();
     }
 
     scheduleFlush() {
@@ -956,6 +979,7 @@
         const raw = await this.fetchRaw();
         this.updateMaps(raw);
         const shared = this.overlayQueue(this.toShared(raw));
+        this.lastShared = copy(shared);
         this.applyRemote = true;
         await this.options.applySharedState?.(shared);
         this.applyRemote = false;
