@@ -2200,3 +2200,64 @@ html[data-theme] .calm-ui .day-tab[aria-selected="true"] {
   }
   .calm-ui .save-toast.is-visible { transform: translateY(0); }
 }
+
+/* Direct map launch and centered mobile settlement geometry. */
+.calm-ui .map-launch-card { display: block; padding: 0; }
+.calm-ui .map-launch-card .disclosure-summary { width: 100%; }
+.calm-ui .map-launch-card:hover .disclosure-summary > b { color: var(--accent-strong); }
+
+@media (max-width: 760px) {
+  .calm-ui .app-shell {
+    width: auto;
+    max-width: none;
+    margin-right: max(var(--page-gutter), env(safe-area-inset-right));
+    margin-left: max(var(--page-gutter), env(safe-area-inset-left));
+  }
+  .calm-ui #panel-settle,
+  .calm-ui .settle-intro,
+  .calm-ui .settlement-summary,
+  .calm-ui .settle-layout,
+  .calm-ui .settle-layout > *,
+  .calm-ui .settle-layout .card {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+  .calm-ui .settle-intro {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: stretch;
+    gap: 12px;
+  }
+  .calm-ui .settle-intro .add-expense-button {
+    width: 100%;
+    min-width: 0;
+    min-height: 46px;
+    margin: 0;
+    white-space: nowrap;
+  }
+  .calm-ui .settlement-summary,
+  .calm-ui .settle-layout { margin-right: 0; margin-left: 0; }
+  .calm-ui .settle-layout { grid-template-columns: minmax(0, 1fr); }
+  .calm-ui .settlement-summary article { min-width: 0; max-width: 100%; }
+  .calm-ui .settlement-summary strong { overflow-wrap: anywhere; }
+  .calm-ui .expense-panel .card-title-row > div { min-width: 0; }
+  .calm-ui #expenseFilter {
+    width: auto;
+    min-width: 108px;
+    flex: 0 0 auto;
+  }
+  .calm-ui .modal,
+  .calm-ui .modal-form,
+  .calm-ui .form-grid { min-width: 0; max-width: 100%; }
+}
+
+@media (max-width: 340px) {
+  .calm-ui .expense-panel .card-title-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: stretch;
+    gap: 10px;
+  }
+  .calm-ui #expenseFilter { width: 100%; min-width: 0; }
+}
