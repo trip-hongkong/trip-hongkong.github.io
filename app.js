@@ -24,6 +24,7 @@
 
   const ITINERARY_MIGRATION = "confirmed-trip-plan-v1";
   const PLACEHOLDER_CLEANUP_MIGRATION = "legacy-placeholder-cleanup-v1";
+  const CHECKLIST_SCOPE_MIGRATION = "personal-checklists-v1";
   const VALID_PLAN_STATUSES = new Set(["confirmed", "recommended", "flexible", "custom"]);
   const LEGACY_PLACEHOLDERS = [
     { id: "seed-arrival", date: "2026-08-15", time: "", title: "홍콩 도착", place: "", note: "항공편 확정 후 도착 시각과 이동 방법 입력" },
@@ -59,7 +60,21 @@
     { city: "MACAU", status: "1박", name: "Broadway Hotel", address: "Sul da Marina Taipa-Sul, junto a Rotunda do Dique Oeste, Taipa, Macau", addressHtml: "Sul da Marina Taipa-Sul,<br>Taipa, Macau", dates: "18–19 AUG", room: "King · 2실" }
   ];
 
-  const CHECK_CATEGORIES = ["예약·서류", "통신·결제", "가방 속"];
+  const CHECKLIST_OWNERS = [
+    { id: "common", label: "공통" },
+    { id: "minje", label: "민제" },
+    { id: "junho", label: "준호" },
+    { id: "juyoung", label: "주영" },
+    { id: "junhyuk", label: "준혁" }
+  ];
+  const CHECK_OWNER_IDS = new Set(CHECKLIST_OWNERS.map((owner) => owner.id));
+  const CHECK_CATEGORIES = ["예약·서류", "통신·결제", "위탁 수하물", "기내 수하물"];
+  const PERSONAL_PACKING_TEMPLATES = [
+    { key: "clothes", category: "위탁 수하물", text: "여벌 옷 · 속옷 · 양말" },
+    { key: "toiletries", category: "위탁 수하물", text: "세면도구 · 개인용품" },
+    { key: "essentials", category: "기내 수하물", text: "여권 · 지갑 · 휴대폰" },
+    { key: "power", category: "기내 수하물", text: "충전기 · 보조배터리 · 개인 약" }
+  ];
   const VALID_DATES = new Set(TRIP_DAYS.map((day) => day.date));
   const VALID_CURRENCIES = new Set(["HKD", "KRW"]);
   const VALID_CATEGORIES = new Set(["식비", "교통", "숙소", "관광", "쇼핑", "기타"]);
@@ -110,21 +125,22 @@
 
   function defaultState() {
     return {
-      schemaVersion: 3,
-      meta: { appliedMigrations: [ITINERARY_MIGRATION, PLACEHOLDER_CLEANUP_MIGRATION] },
+      schemaVersion: 4,
+      meta: { appliedMigrations: [ITINERARY_MIGRATION, PLACEHOLDER_CLEANUP_MIGRATION, CHECKLIST_SCOPE_MIGRATION] },
       checklist: [
-        { id: "before-flight", category: "예약·서류", text: "항공편과 수하물 규정 확인", done: true },
-        { id: "before-hotel", category: "예약·서류", text: "숙소 예약·체크인 정보 확인", done: true },
-        { id: "before-passport", category: "예약·서류", text: "여권 유효기간과 영문 이름 확인", done: false },
-        { id: "before-insurance", category: "예약·서류", text: "여행자 보험 가입", done: false },
-        { id: "before-esim", category: "통신·결제", text: "eSIM 또는 로밍 준비", done: false },
-        { id: "before-payment", category: "통신·결제", text: "해외 결제 카드와 현금 준비", done: false },
-        { id: "before-map", category: "통신·결제", text: "Google 지도 저장 목록 확인", done: true },
-        { id: "before-hotel-map", category: "통신·결제", text: "Royal Plaza Hotel 지도 저장", done: true },
-        { id: "before-adapter", category: "가방 속", text: "BF형 어댑터와 충전기", done: false },
-        { id: "before-rain", category: "가방 속", text: "작은 우산 또는 우비", done: false },
-        { id: "before-medicine", category: "가방 속", text: "상비약과 개인 약", done: false },
-        { id: "before-shoes", category: "가방 속", text: "걷기 편한 신발", done: false }
+        { id: "before-flight", ownerId: "common", category: "예약·서류", text: "항공편과 수하물 규정 확인", done: true },
+        { id: "before-hotel", ownerId: "common", category: "예약·서류", text: "숙소 예약·체크인 정보 확인", done: true },
+        { id: "before-passport", ownerId: "common", category: "예약·서류", text: "여권 유효기간과 영문 이름 확인", done: false },
+        { id: "before-insurance", ownerId: "common", category: "예약·서류", text: "여행자 보험 가입", done: false },
+        { id: "before-esim", ownerId: "common", category: "통신·결제", text: "eSIM 또는 로밍 준비", done: false },
+        { id: "before-payment", ownerId: "common", category: "통신·결제", text: "해외 결제 카드와 현금 준비", done: false },
+        { id: "before-map", ownerId: "common", category: "통신·결제", text: "Google 지도 저장 목록 확인", done: true },
+        { id: "before-hotel-map", ownerId: "common", category: "통신·결제", text: "Royal Plaza Hotel 지도 저장", done: true },
+        { id: "before-adapter", ownerId: "common", category: "기내 수하물", text: "BF형 어댑터와 충전기", done: false },
+        { id: "before-rain", ownerId: "common", category: "기내 수하물", text: "작은 우산 또는 우비", done: false },
+        { id: "before-medicine", ownerId: "common", category: "기내 수하물", text: "상비약과 개인 약", done: false },
+        { id: "before-shoes", ownerId: "common", category: "위탁 수하물", text: "걷기 편한 신발", done: false },
+        ...personalChecklistSeeds()
       ],
       itinerary: TRIP_ITINERARY.map((item) => ({ ...item })),
       participants: [
@@ -136,8 +152,20 @@
       expenses: [],
       weatherCache: null,
       rateCache: null,
-      ui: { activeDate: START_DATE, hideCompleted: false }
+      ui: { activeDate: START_DATE, hideCompleted: false, activeChecklistOwner: "common" }
     };
+  }
+
+  function personalChecklistSeeds() {
+    return CHECKLIST_OWNERS.filter((owner) => owner.id !== "common").flatMap((owner) => (
+      PERSONAL_PACKING_TEMPLATES.map((item) => ({
+        id: `packing-${owner.id}-${item.key}`,
+        ownerId: owner.id,
+        category: item.category,
+        text: item.text,
+        done: false
+      }))
+    ));
   }
 
   function makeId(prefix) {
@@ -149,20 +177,34 @@
     return typeof value === "string" ? value.trim().replace(/\s+/g, " ").slice(0, maxLength) : "";
   }
 
+  function normalizeCheckCategory(category, id = "") {
+    if (CHECK_CATEGORIES.includes(category)) return category;
+    if (category === "가방 속") {
+      return id === "before-shoes" ? "위탁 수하물" : "기내 수하물";
+    }
+    return "예약·서류";
+  }
+
   function sanitizeChecklist(items, fallback) {
     if (!Array.isArray(items)) return fallback;
-    const cleaned = items.slice(0, 200).map((item) => {
+    if (!items.length) return [];
+    const ids = new Set();
+    const cleaned = items.slice(0, 500).map((item) => {
       if (!item || typeof item !== "object" || (item.phase && item.phase !== "before")) return null;
       const text = cleanText(item.text, 100);
       if (!text) return null;
+      let id = cleanText(item.id, 100) || makeId("check");
+      while (ids.has(id)) id = makeId("check");
+      ids.add(id);
       return {
-        id: cleanText(item.id, 100) || makeId("check"),
-        category: CHECK_CATEGORIES.includes(item.category) ? item.category : "예약·서류",
+        id,
+        ownerId: CHECK_OWNER_IDS.has(item.ownerId) ? item.ownerId : "common",
+        category: normalizeCheckCategory(item.category, id),
         text,
         done: item.done === true
       };
     }).filter(Boolean);
-    return cleaned.length ? cleaned : fallback;
+    return cleaned;
   }
 
   function sanitizeItinerary(items, fallback) {
@@ -306,7 +348,17 @@
       input.meta.appliedMigrations.push(PLACEHOLDER_CLEANUP_MIGRATION);
     }
 
-    input.schemaVersion = 3;
+    if (!input.meta.appliedMigrations.includes(CHECKLIST_SCOPE_MIGRATION)) {
+      const checklistIds = new Set(input.checklist.map((item) => item.id));
+      personalChecklistSeeds().forEach((item) => {
+        if (checklistIds.has(item.id)) return;
+        input.checklist.push(item);
+        checklistIds.add(item.id);
+      });
+      input.meta.appliedMigrations.push(CHECKLIST_SCOPE_MIGRATION);
+    }
+
+    input.schemaVersion = 4;
     return input;
   }
 
@@ -317,7 +369,7 @@
     const participants = sanitizeParticipants(input.participants, base.participants);
     const ui = input.ui && typeof input.ui === "object" ? input.ui : {};
     return {
-      schemaVersion: 3,
+      schemaVersion: 4,
       meta: sanitizeMeta(input.meta),
       checklist: sanitizeChecklist(input.checklist, base.checklist),
       itinerary: sanitizeItinerary(input.itinerary, base.itinerary),
@@ -327,7 +379,8 @@
       rateCache,
       ui: {
         activeDate: VALID_DATES.has(ui.activeDate) ? ui.activeDate : bestActiveDate(),
-        hideCompleted: ui.hideCompleted === true
+        hideCompleted: ui.hideCompleted === true,
+        activeChecklistOwner: CHECK_OWNER_IDS.has(ui.activeChecklistOwner) ? ui.activeChecklistOwner : "common"
       }
     };
   }
@@ -435,9 +488,14 @@
     return state.participants.find((person) => person.id === id);
   }
 
-  function prepStats() {
-    const total = state.checklist.length;
-    const done = state.checklist.filter((item) => item.done).length;
+  function checklistOwnerById(id) {
+    return CHECKLIST_OWNERS.find((owner) => owner.id === id) || CHECKLIST_OWNERS[0];
+  }
+
+  function prepStats(ownerId = null) {
+    const items = ownerId ? state.checklist.filter((item) => item.ownerId === ownerId) : state.checklist;
+    const total = items.length;
+    const done = items.filter((item) => item.done).length;
     return { total, done, remaining: Math.max(0, total - done), percent: total ? Math.round((done / total) * 100) : 0 };
   }
 
@@ -487,18 +545,50 @@
     renderRate();
   }
 
+  function renderChecklistOwners() {
+    const container = $("#checklistOwnerSwitcher");
+    if (!container) return;
+    const legend = createElement("legend", "visually-hidden", "체크리스트 선택");
+    const controls = CHECKLIST_OWNERS.map((owner) => {
+      const stats = prepStats(owner.id);
+      const label = createElement("label", "checklist-owner-option");
+      const input = createElement("input");
+      input.type = "radio";
+      input.name = "activeChecklistOwner";
+      input.value = owner.id;
+      input.id = `checklist-owner-${owner.id}`;
+      input.dataset.checkOwner = owner.id;
+      input.checked = state.ui.activeChecklistOwner === owner.id;
+      input.setAttribute("aria-controls", "beforeChecklist");
+      const face = createElement("span", "checklist-owner-face");
+      face.append(createElement("b", "", owner.label), createElement("small", "", `${stats.done}/${stats.total}`));
+      label.append(input, face);
+      return label;
+    });
+    container.replaceChildren(legend, ...controls);
+  }
+
   function renderChecklist() {
     const container = $("#beforeChecklist");
     if (!container) return;
     container.replaceChildren();
+    const ownerItems = state.checklist.filter((item) => item.ownerId === state.ui.activeChecklistOwner);
     CHECK_CATEGORIES.forEach((category) => {
-      const items = state.checklist.filter((item) => item.category === category && !(state.ui.hideCompleted && item.done));
-      if (!items.length && state.ui.hideCompleted) return;
-      const group = createElement("section", "check-group");
-      group.append(createElement("h3", "", category));
+      const categoryItems = ownerItems.filter((item) => item.category === category);
+      const isBaggage = category === "위탁 수하물" || category === "기내 수하물";
+      if (!categoryItems.length && !isBaggage) return;
+      const items = categoryItems.filter((item) => !(state.ui.hideCompleted && item.done));
+      const group = createElement("section", `check-group${isBaggage ? " is-baggage" : ""}`);
+      const heading = createElement("div", "check-group-heading");
+      const categoryDone = categoryItems.filter((item) => item.done).length;
+      heading.append(
+        createElement("h3", "", category),
+        createElement("span", "", `${categoryDone}/${categoryItems.length}`)
+      );
+      group.append(heading);
       const list = createElement("div", "check-list");
       if (!items.length) {
-        list.append(createElement("p", "empty-state", "등록된 항목이 없습니다."));
+        list.append(createElement("p", "empty-state", categoryItems.length ? "완료 항목을 숨겼습니다." : "아직 항목이 없습니다."));
       } else {
         items.forEach((item) => {
           const row = createElement("div", `check-item${item.done ? " is-done" : ""}`);
@@ -521,16 +611,18 @@
       group.append(list);
       container.append(group);
     });
-    if (!container.children.length) container.append(createElement("p", "empty-state", "모든 항목을 완료했습니다."));
   }
 
   function renderPrepProgress() {
-    const stats = prepStats();
+    const owner = checklistOwnerById(state.ui.activeChecklistOwner);
+    const stats = prepStats(owner.id);
     if ($("#prepHeadCount")) $("#prepHeadCount").textContent = `${stats.done} / ${stats.total}`;
     if ($("#prepPercent")) $("#prepPercent").textContent = `${stats.percent}%`;
-    if ($("#prepRemaining")) $("#prepRemaining").textContent = `${stats.remaining}개 남음`;
-    if ($("#homePrepCount")) $("#homePrepCount").textContent = `${stats.done} / ${stats.total}`;
-    if ($("#homePrepBar")) $("#homePrepBar").style.width = `${stats.percent}%`;
+    if ($("#prepRemaining")) {
+      $("#prepRemaining").textContent = stats.total
+        ? `${owner.label} · ${stats.remaining ? `${stats.remaining}개 남음` : "완료"}`
+        : `${owner.label} · 항목 없음`;
+    }
     if ($("#prepProgressRing")) $("#prepProgressRing").style.setProperty("--progress", `${stats.percent}%`);
     const bar = $("#prepProgressBar");
     if (bar) {
@@ -538,10 +630,15 @@
       const progress = bar.parentElement;
       if (progress) progress.setAttribute("aria-valuenow", String(stats.percent));
     }
+    const submit = $("#checklistSubmit");
+    if (submit) submit.textContent = `${owner.label}에 추가`;
+    const form = $("#checklistForm");
+    if (form) form.setAttribute("aria-label", `${owner.label} 체크리스트에 새 항목 추가`);
   }
 
   function renderPrepare() {
     if ($("#hideCompleted")) $("#hideCompleted").checked = state.ui.hideCompleted;
+    renderChecklistOwners();
     renderPrepProgress();
     renderChecklist();
   }
@@ -1590,6 +1687,14 @@
   function bindEvents() {
     document.addEventListener("click", handleClick);
     document.addEventListener("change", (event) => {
+      const ownerInput = event.target.closest("[data-check-owner]");
+      if (ownerInput && ownerInput.checked && CHECK_OWNER_IDS.has(ownerInput.dataset.checkOwner)) {
+        state.ui.activeChecklistOwner = ownerInput.dataset.checkOwner;
+        saveState(false);
+        renderPrepare();
+        window.requestAnimationFrame(() => $("#checklist-owner-" + state.ui.activeChecklistOwner)?.focus());
+        return;
+      }
       const checkbox = event.target.closest("[data-check-id]");
       if (checkbox) {
         const item = state.checklist.find((entry) => entry.id === checkbox.dataset.checkId);
@@ -1611,7 +1716,7 @@
       const text = cleanText(formData.get("text"), 80);
       const category = CHECK_CATEGORIES.includes(formData.get("category")) ? formData.get("category") : "예약·서류";
       if (!text) return;
-      state.checklist.push({ id: makeId("check"), category, text, done: false });
+      state.checklist.push({ id: makeId("check"), ownerId: state.ui.activeChecklistOwner, category, text, done: false });
       event.currentTarget.reset();
       saveState();
       renderPrepare();
