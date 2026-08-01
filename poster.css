@@ -2776,3 +2776,48 @@ html[data-theme="dark"] .calm-ui .hourly-weather-empty {
     scroll-snap-type: x mandatory;
   }
 }
+
+/* Booking specifications use one consistent inset rhythm. */
+.calm-ui .booking-facts > span,
+.calm-ui .booking-facts > span:first-child {
+  min-height: 62px;
+  padding: 12px 14px;
+  align-content: center;
+  gap: 3px;
+}
+.calm-ui .booking-facts small {
+  font-size: 9px;
+  letter-spacing: .02em;
+  line-height: 1.25;
+}
+.calm-ui .booking-facts b {
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+@media (max-width: 520px) {
+  .calm-ui .booking-facts.is-four > span:nth-child(3),
+  .calm-ui .booking-facts.is-four > span:nth-child(4) {
+    padding: 12px 14px;
+  }
+  .calm-ui .stay-booking .booking-facts {
+    grid-template-columns: minmax(0, 1fr);
+    padding-block: 4px;
+  }
+  .calm-ui .stay-booking .booking-facts > span,
+  .calm-ui .stay-booking .booking-facts > span:first-child {
+    min-height: 50px;
+    grid-template-columns: minmax(62px, .7fr) minmax(0, 1.3fr);
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+  }
+  .calm-ui .stay-booking .booking-facts > span + span {
+    border-top: 1px solid var(--line);
+    border-left: 0;
+  }
+  .calm-ui .stay-booking .booking-facts b {
+    text-align: right;
+    overflow-wrap: anywhere;
+  }
+}
