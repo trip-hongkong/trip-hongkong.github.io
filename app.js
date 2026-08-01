@@ -21,6 +21,42 @@
     { date: "2026-08-19", day: 5, number: "19", weekday: "수", weekdayLong: "WEDNESDAY" }
   ];
 
+  const ITINERARY_MIGRATION = "confirmed-trip-plan-v1";
+  const VALID_PLAN_STATUSES = new Set(["confirmed", "recommended", "flexible", "custom"]);
+  const LEGACY_PLACEHOLDERS = [
+    { id: "seed-arrival", date: "2026-08-15", time: "", title: "홍콩 도착", place: "", note: "항공편 확정 후 도착 시각과 이동 방법 입력" },
+    { id: "seed-departure", date: "2026-08-19", time: "", title: "체크아웃 · 귀국", place: "Royal Plaza Hotel", note: "항공편 확정 후 공항 출발 시각 입력" }
+  ];
+  const TRIP_ITINERARY = [
+    { id: "trip-cx413-depart", date: "2026-08-15", time: "08:00", status: "confirmed", title: "CX413 인천 출발", place: "인천국제공항 제1터미널", note: "캐세이퍼시픽 · Economy Light · 이코노미 · 위탁 수하물 1개" },
+    { id: "trip-cx413-arrive", date: "2026-08-15", time: "10:50", status: "confirmed", title: "홍콩 도착", place: "홍콩국제공항 제1터미널", note: "입국 심사와 수하물 수령 후 숙소 이동" },
+    { id: "trip-royal-arrive", date: "2026-08-15", time: "12:30", status: "recommended", title: "Royal Plaza Hotel 도착", place: "Royal Plaza Hotel Hong Kong", note: "도착 예정 12:00–13:00 · 객실 준비 전이면 짐 보관" },
+    { id: "trip-mong-kok", date: "2026-08-15", time: "16:00", status: "flexible", title: "몽콕 산책", place: "Mong Kok Hong Kong", note: "MOKO · 화원가 · 운동화 거리, 컨디션에 따라 짧게" },
+    { id: "trip-temple-street", date: "2026-08-15", time: "19:30", status: "flexible", title: "템플스트리트 야시장", place: "Temple Street Night Market Hong Kong", note: "첫날 저녁 · 피곤하면 다음 날로 이동" },
+    { id: "trip-peak", date: "2026-08-16", time: "08:30", status: "recommended", title: "빅토리아 피크", place: "Victoria Peak Hong Kong", note: "오전 일찍 이동 · 피크트램 운영과 날씨 확인" },
+    { id: "trip-central", date: "2026-08-16", time: "11:30", status: "recommended", title: "센트럴", place: "Central Hong Kong", note: "점심 · 타이쿤 · PMQ · 미드레벨 에스컬레이터" },
+    { id: "trip-star-ferry", date: "2026-08-16", time: "16:30", status: "recommended", title: "스타페리", place: "Central Star Ferry Pier Hong Kong", note: "센트럴에서 침사추이로 이동" },
+    { id: "trip-avenue-stars", date: "2026-08-16", time: "17:30", status: "recommended", title: "스타의 거리 · 빅토리아항", place: "Avenue of Stars Hong Kong", note: "해질 무렵부터 야경까지" },
+    { id: "trip-kowloon-park", date: "2026-08-17", time: "09:30", status: "flexible", title: "구룡채성 공원", place: "Kowloon Walled City Park Hong Kong", note: "오전 야외 일정 · 비가 많이 오면 실내 일정으로 변경" },
+    { id: "trip-west-kowloon", date: "2026-08-17", time: "14:00", status: "flexible", title: "서구룡 · M+", place: "M+ Museum Hong Kong", note: "비 오는 날에도 가능한 실내 일정" },
+    { id: "trip-k11", date: "2026-08-17", time: "18:00", status: "flexible", title: "K11 MUSEA · 침사추이", place: "K11 MUSEA Hong Kong", note: "저녁 식사와 쇼핑 · 전날 못 본 야경 보완" },
+    { id: "trip-royal-checkout", date: "2026-08-18", time: "09:00", status: "recommended", title: "Royal Plaza Hotel 체크아웃", place: "Royal Plaza Hotel Hong Kong", note: "권장 시각 · 객실 1실, 3박 종료" },
+    { id: "trip-hzmb-hk", date: "2026-08-18", time: "09:30", status: "recommended", title: "HZMB 홍콩구안으로 이동", place: "HZMB Hong Kong Port", note: "큰 짐이 있으면 택시 또는 6인승 차량 검토" },
+    { id: "trip-gold-bus", date: "2026-08-18", time: "11:10", status: "recommended", title: "금바로 마카오 이동", place: "HZMB Macao Port", note: "권장편 · 출입경 포함 전체 이동 3–4시간 예상" },
+    { id: "trip-broadway-checkin", date: "2026-08-18", time: "13:30", status: "recommended", title: "Broadway Hotel 도착", place: "Broadway Hotel Macau", note: "Broadway King 2실 · 성인 4명 · 조식 불포함" },
+    { id: "trip-macau-old-town", date: "2026-08-18", time: "15:00", status: "flexible", title: "마카오 구시가지", place: "Senado Square Macau", note: "세나도 광장 · 성바울 유적 · 몬테요새" },
+    { id: "trip-cotai", date: "2026-08-18", time: "19:30", status: "flexible", title: "코타이 야경", place: "Galaxy Macau", note: "Galaxy · Broadway 주변에서 저녁" },
+    { id: "trip-broadway-checkout", date: "2026-08-19", time: "10:20", status: "recommended", title: "Broadway Hotel 체크아웃", place: "Broadway Hotel Macau", note: "권장 시각 · 객실 2실, 1박 종료" },
+    { id: "trip-macau-port", date: "2026-08-19", time: "11:15", status: "recommended", title: "마카오구안 도착 · 상류 체크인", place: "HZMB Macao Port", note: "HKIA 직행버스 카운터 · 이용 가능 여부와 수하물 연결 사전 확인" },
+    { id: "trip-skypier-coach", date: "2026-08-19", time: "12:30", status: "recommended", title: "HKIA SkyPier 직행버스", place: "Hong Kong International Airport SkyPier", note: "권장편 · 별도 예약 필요 · 예상 도착 13:15" },
+    { id: "trip-cx430-depart", date: "2026-08-19", time: "17:40", status: "confirmed", title: "CX430 홍콩 출발", place: "홍콩국제공항 제1터미널", note: "캐세이퍼시픽 · Economy Light · 이코노미 · 위탁 수하물 1개" },
+    { id: "trip-cx430-arrive", date: "2026-08-19", time: "22:25", status: "confirmed", title: "인천 도착", place: "인천국제공항 제1터미널", note: "비행시간 3시간 45분" }
+  ];
+  const STAYS = [
+    { city: "HONG KONG", status: "3박", name: "Royal Plaza Hotel", address: "193 Prince Edward Road West, Kowloon, Hong Kong", addressHtml: "193 Prince Edward Road West,<br>Kowloon, Hong Kong", dates: "15–18 AUG", room: "Family · 1실" },
+    { city: "MACAU", status: "1박", name: "Broadway Hotel", address: "Sul da Marina Taipa-Sul, junto a Rotunda do Dique Oeste, Taipa, Macau", addressHtml: "Sul da Marina Taipa-Sul,<br>Taipa, Macau", dates: "18–19 AUG", room: "King · 2실" }
+  ];
+
   const PLACE_SEEDS = [
     { name: "스타페리 터미널", description: "침사추이에서 배로 이동", query: "Star Ferry Pier Tsim Sha Tsui Hong Kong" },
     { name: "스타의 거리", description: "빅토리아항 야경", query: "Avenue of Stars Hong Kong" },
@@ -49,10 +85,11 @@
 
   function defaultState() {
     return {
-      schemaVersion: 2,
+      schemaVersion: 3,
+      meta: { appliedMigrations: [ITINERARY_MIGRATION] },
       checklist: [
-        { id: "before-flight", category: "예약·서류", text: "항공편과 수하물 규정 확인", done: false },
-        { id: "before-hotel", category: "예약·서류", text: "숙소 예약·체크인 정보 확인", done: false },
+        { id: "before-flight", category: "예약·서류", text: "항공편과 수하물 규정 확인", done: true },
+        { id: "before-hotel", category: "예약·서류", text: "숙소 예약·체크인 정보 확인", done: true },
         { id: "before-passport", category: "예약·서류", text: "여권 유효기간과 영문 이름 확인", done: false },
         { id: "before-insurance", category: "예약·서류", text: "여행자 보험 가입", done: false },
         { id: "before-esim", category: "통신·결제", text: "eSIM 또는 로밍 준비", done: false },
@@ -64,13 +101,12 @@
         { id: "before-medicine", category: "가방 속", text: "상비약과 개인 약", done: false },
         { id: "before-shoes", category: "가방 속", text: "걷기 편한 신발", done: false }
       ],
-      itinerary: [
-        { id: "seed-arrival", date: "2026-08-15", time: "", title: "홍콩 도착", place: "", note: "항공편 확정 후 도착 시각과 이동 방법 입력" },
-        { id: "seed-departure", date: "2026-08-19", time: "", title: "체크아웃 · 귀국", place: "Royal Plaza Hotel", note: "항공편 확정 후 공항 출발 시각 입력" }
-      ],
+      itinerary: TRIP_ITINERARY.map((item) => ({ ...item })),
       participants: [
         { id: "person-me", name: "나", active: true, createdAt: new Date().toISOString() },
-        { id: "person-companion", name: "동행 1", active: true, createdAt: new Date().toISOString() }
+        { id: "person-companion", name: "동행 1", active: true, createdAt: new Date().toISOString() },
+        { id: "person-companion-2", name: "동행 2", active: true, createdAt: new Date().toISOString() },
+        { id: "person-companion-3", name: "동행 3", active: true, createdAt: new Date().toISOString() }
       ],
       expenses: [],
       weatherCache: null,
@@ -114,12 +150,13 @@
         id: cleanText(item.id, 100) || makeId("plan"),
         date: VALID_DATES.has(item.date) ? item.date : START_DATE,
         time: /^([01]\d|2[0-3]):[0-5]\d$/.test(item.time) ? item.time : "",
+        status: VALID_PLAN_STATUSES.has(item.status) ? item.status : "custom",
         title,
         place: cleanText(item.place, 120),
         note: cleanText(item.note, 220)
       };
     }).filter(Boolean);
-    return cleaned.length ? cleaned : fallback;
+    return cleaned;
   }
 
   function sanitizeParticipants(items, fallback) {
@@ -198,6 +235,51 @@
     }).filter(Boolean);
   }
 
+  function sanitizeMeta(meta) {
+    const appliedMigrations = meta && Array.isArray(meta.appliedMigrations)
+      ? [...new Set(meta.appliedMigrations.map((item) => cleanText(item, 80)).filter(Boolean))].slice(0, 30)
+      : [];
+    return { appliedMigrations };
+  }
+
+  function sameItineraryItem(left, right) {
+    return ["id", "date", "time", "title", "place", "note"].every((key) => left[key] === right[key]);
+  }
+
+  function itineraryFingerprint(item) {
+    return [item.date, item.time, item.title, item.place, item.note].join("|");
+  }
+
+  function applyMigrations(input) {
+    if (input.meta.appliedMigrations.includes(ITINERARY_MIGRATION)) return input;
+
+    input.itinerary = input.itinerary.filter((item) => !LEGACY_PLACEHOLDERS.some((legacy) => sameItineraryItem(item, legacy)));
+    const ids = new Set(input.itinerary.map((item) => item.id));
+    const fingerprints = new Set(input.itinerary.map(itineraryFingerprint));
+    TRIP_ITINERARY.forEach((item) => {
+      if (ids.has(item.id) || fingerprints.has(itineraryFingerprint(item))) return;
+      input.itinerary.push({ ...item });
+      ids.add(item.id);
+      fingerprints.add(itineraryFingerprint(item));
+    });
+
+    input.checklist = input.checklist.map((item) => (
+      item.id === "before-flight" || item.id === "before-hotel" ? { ...item, done: true } : item
+    ));
+
+    const participantIds = new Set(input.participants.map((person) => person.id));
+    if (input.participants.length === 2 && participantIds.has("person-me") && participantIds.has("person-companion")) {
+      input.participants.push(
+        { id: "person-companion-2", name: "동행 2", active: true, createdAt: new Date().toISOString() },
+        { id: "person-companion-3", name: "동행 3", active: true, createdAt: new Date().toISOString() }
+      );
+    }
+
+    input.schemaVersion = 3;
+    input.meta.appliedMigrations.push(ITINERARY_MIGRATION);
+    return input;
+  }
+
   function sanitizeState(input) {
     const base = defaultState();
     if (!input || typeof input !== "object") return base;
@@ -205,7 +287,8 @@
     const participants = sanitizeParticipants(input.participants, base.participants);
     const ui = input.ui && typeof input.ui === "object" ? input.ui : {};
     return {
-      schemaVersion: 2,
+      schemaVersion: 3,
+      meta: sanitizeMeta(input.meta),
       checklist: sanitizeChecklist(input.checklist, base.checklist),
       itinerary: sanitizeItinerary(input.itinerary, base.itinerary),
       participants,
@@ -219,13 +302,21 @@
     };
   }
 
+  function normalizeState(input) {
+    return applyMigrations(sanitizeState(input));
+  }
+
   function loadState() {
     try {
       const current = localStorage.getItem(STORAGE_KEY);
-      if (current) return sanitizeState(JSON.parse(current));
+      if (current) {
+        const normalized = normalizeState(JSON.parse(current));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(normalized));
+        return normalized;
+      }
       const legacy = localStorage.getItem(LEGACY_STORAGE_KEY);
       if (legacy) {
-        const migrated = sanitizeState(JSON.parse(legacy));
+        const migrated = normalizeState(JSON.parse(legacy));
         localStorage.setItem(STORAGE_KEY, JSON.stringify(migrated));
         return migrated;
       }
@@ -485,11 +576,17 @@
       time.dateTime = item.time ? `${item.date}T${item.time}` : item.date;
       const marker = createElement("span", "timeline-marker");
       const copy = createElement("div", "timeline-copy");
-      copy.append(createElement("h3", "", item.title));
+      const titleRow = createElement("div", "timeline-title-row");
+      titleRow.append(createElement("h3", "", item.title));
+      if (item.status && item.status !== "custom") {
+        const labels = { confirmed: "확정", recommended: "권장", flexible: "선택" };
+        titleRow.append(createElement("span", `plan-status is-${item.status}`, labels[item.status] || ""));
+      }
+      copy.append(titleRow);
       if (item.note) copy.append(createElement("p", "", item.note));
       if (item.place) {
         const map = createElement("a", "", `${item.place} · 지도 ↗`);
-        map.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${item.place} Hong Kong`)}`;
+        map.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.place)}`;
         map.target = "_blank";
         map.rel = "noopener noreferrer";
         copy.append(map);
@@ -504,12 +601,27 @@
     });
   }
 
+  function renderStayCard() {
+    const stay = state.ui.activeDate >= "2026-08-18" ? STAYS[1] : STAYS[0];
+    if ($("#activeStayLabel")) $("#activeStayLabel").textContent = `STAY · ${stay.city}`;
+    if ($("#activeStayStatus")) $("#activeStayStatus").textContent = stay.status;
+    if ($("#activeStayName")) $("#activeStayName").textContent = stay.name;
+    if ($("#activeStayAddress")) $("#activeStayAddress").textContent = stay.address;
+    if ($("#activeStayDates")) $("#activeStayDates").textContent = stay.dates;
+    if ($("#activeStayRoom")) $("#activeStayRoom").textContent = stay.room;
+    const map = $("#activeStayMap");
+    if (map) map.href = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(`${stay.name}, ${stay.address}`)}`;
+    const copy = $("#activeStayCopy");
+    if (copy) copy.dataset.copy = stay.address;
+  }
+
   function setActiveDate(date, focus = false) {
     if (!VALID_DATES.has(date)) return;
     state.ui.activeDate = date;
     saveState(false);
     renderDaySwitcher();
     renderTimeline();
+    renderStayCard();
     renderTripWeather(state.weatherCache ? state.weatherCache.data : null);
     if (focus) $(`.day-tab[data-date="${date}"]`)?.focus();
   }
@@ -517,6 +629,7 @@
   function renderTrip() {
     renderDaySwitcher();
     renderTimeline();
+    renderStayCard();
     renderTripWeather(state.weatherCache ? state.weatherCache.data : null, Boolean(state.weatherCache));
   }
 
@@ -940,7 +1053,7 @@
   function addPlaceToItinerary(index) {
     const place = PLACE_SEEDS[index];
     if (!place) return;
-    state.itinerary.push({ id: makeId("plan"), date: state.ui.activeDate, time: "", title: place.description, place: place.name, note: "" });
+    state.itinerary.push({ id: makeId("plan"), date: state.ui.activeDate, time: "", status: "custom", title: place.description, place: place.name, note: "" });
     saveState(false);
     showToast(`${place.name}을 8월 ${selectedDay().number}일에 추가했습니다`);
   }
@@ -1278,7 +1391,7 @@
     try {
       const parsed = JSON.parse(await file.text());
       if (parsed.appId && parsed.appId !== "trip-hongkong") throw new Error("Wrong app backup");
-      const incoming = sanitizeState(parsed.state || parsed);
+      const incoming = normalizeState(parsed.state || parsed);
       const receiptRows = Array.isArray(parsed.receipts) ? parsed.receipts.slice(0, 1000) : [];
       if (!window.confirm("현재 내용을 백업 파일의 내용으로 바꿀까요?")) return;
       await clearReceipts().catch(() => {});
@@ -1415,7 +1528,7 @@
       const title = cleanText(formData.get("title"), 80);
       if (!title) return;
       const date = VALID_DATES.has(formData.get("date")) ? formData.get("date") : state.ui.activeDate;
-      state.itinerary.push({ id: makeId("plan"), date, time: /^([01]\d|2[0-3]):[0-5]\d$/.test(formData.get("time")) ? formData.get("time") : "", title, place: cleanText(formData.get("place"), 100), note: cleanText(formData.get("note"), 180) });
+      state.itinerary.push({ id: makeId("plan"), date, time: /^([01]\d|2[0-3]):[0-5]\d$/.test(formData.get("time")) ? formData.get("time") : "", status: "custom", title, place: cleanText(formData.get("place"), 100), note: cleanText(formData.get("note"), 180) });
       state.ui.activeDate = date;
       saveState(false);
       closeDialog("#itineraryDialog");
@@ -1484,7 +1597,7 @@
     window.addEventListener("storage", (event) => {
       if (event.key !== STORAGE_KEY || !event.newValue) return;
       try {
-        state = sanitizeState(JSON.parse(event.newValue));
+        state = normalizeState(JSON.parse(event.newValue));
         renderPage();
         showToast("다른 탭의 변경을 반영했습니다");
       } catch (error) {
