@@ -2711,7 +2711,8 @@ html[data-theme="dark"] .calm-ui .cloud-join-card > p.is-error { color: #ff6961;
 .calm-ui .hourly-weather::-webkit-scrollbar { display: none; }
 .calm-ui .hourly-weather-item {
   display: grid;
-  min-height: 112px;
+  min-width: 0;
+  min-height: 126px;
   padding: 11px 8px;
   align-content: start;
   justify-items: center;
@@ -2736,11 +2737,28 @@ html[data-theme="dark"] .calm-ui .cloud-join-card > p.is-error { color: #ff6961;
   line-height: 1.2;
 }
 .calm-ui .hourly-weather-item small {
+  display: grid;
+  width: 100%;
+  min-width: 0;
   margin-top: 4px;
-  color: var(--muted);
+  gap: 1px;
   font-size: 9px;
   line-height: 1.35;
-  white-space: nowrap;
+  text-align: center;
+  white-space: normal;
+}
+.calm-ui .hourly-weather-item small span {
+  display: block;
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+.calm-ui .hourly-weather-condition {
+  color: var(--ink-soft);
+  font-weight: 650;
+}
+.calm-ui .hourly-weather-rain {
+  color: var(--muted);
 }
 .calm-ui .hourly-weather-empty {
   display: flex;
@@ -2775,6 +2793,31 @@ html[data-theme="dark"] .calm-ui .hourly-weather-empty {
     scroll-padding-inline: 20px;
     scroll-snap-type: x mandatory;
   }
+}
+
+/* Daily forecast cards also change the selected itinerary day. */
+.calm-ui button.weather-day {
+  width: 100%;
+  appearance: none;
+  color: inherit;
+  font: inherit;
+  touch-action: manipulation;
+}
+.calm-ui button.weather-day small {
+  min-width: 0;
+  max-width: 100%;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+.calm-ui button.weather-day:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+@media (hover: hover) {
+  .calm-ui button.weather-day:hover { box-shadow: inset 0 0 0 1px var(--accent-line); }
+}
+@media print {
+  .calm-ui button.weather-day { display: block !important; }
 }
 
 /* Booking specifications use one consistent inset rhythm. */
