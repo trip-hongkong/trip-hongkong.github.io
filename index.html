@@ -31,10 +31,10 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css?v=20260801-7">
-  <link rel="stylesheet" href="poster.css?v=20260801-27">
+  <link rel="stylesheet" href="poster.css?v=20260801-28">
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.111.0/dist/umd/supabase.min.js"></script>
   <script defer src="cloud-sync.js?v=20260801-24"></script>
-  <script defer src="app.js?v=20260801-25"></script>
+  <script defer src="app.js?v=20260801-26"></script>
 </head>
 <body class="calm-ui" data-page="all">
   <a class="skip-link" href="#main">본문으로 바로가기</a>
@@ -195,7 +195,7 @@
             <article class="card plain-card weather-card weather-panel" id="weather">
               <div class="card-heading card-title-row"><div><p class="card-label">LIVE FORECAST</p><h3>날씨</h3></div><button class="icon-button" type="button" data-action="refresh-weather" aria-label="날씨 새로고침">↻</button></div>
               <div class="current-weather"><span id="currentWeatherIcon">◌</span><div><span class="current-weather-kicker">오늘 날씨</span><strong id="currentWeatherText">확인 중</strong><small id="currentWeatherDetail">홍콩 현재 날씨</small></div></div>
-              <div id="weatherDays" class="weather-days"></div>
+              <div id="weatherDays" class="weather-days" role="group" aria-label="여행 날짜별 날씨"></div>
               <div class="hourly-weather-heading"><strong id="hourlyWeatherTitle">시간별 예보</strong><span>1시간 단위</span></div>
               <div id="hourlyWeather" class="hourly-weather" aria-label="선택한 날짜의 시간별 날씨" aria-live="polite"></div>
               <p id="weatherUpdated" class="source-note"></p>
