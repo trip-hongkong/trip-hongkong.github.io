@@ -2728,8 +2728,10 @@ html[data-theme="dark"] .calm-ui .cloud-join-card > p.is-error { color: #ff6961;
 }
 .calm-ui .hourly-weather-icon {
   margin: 8px 0 3px;
-  font-size: 21px;
+  font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+  font-size: 24px;
   line-height: 1;
+  filter: drop-shadow(0 2px 3px rgba(42, 92, 142, .14));
 }
 .calm-ui .hourly-weather-item strong {
   color: var(--ink);
@@ -2756,6 +2758,9 @@ html[data-theme="dark"] .calm-ui .cloud-join-card > p.is-error { color: #ff6961;
 .calm-ui .hourly-weather-condition {
   color: var(--ink-soft);
   font-weight: 650;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .calm-ui .hourly-weather-rain {
   color: var(--muted);
@@ -2798,16 +2803,32 @@ html[data-theme="dark"] .calm-ui .hourly-weather-empty {
 /* Daily forecast cards also change the selected itinerary day. */
 .calm-ui button.weather-day {
   width: 100%;
+  min-height: 104px;
+  cursor: pointer;
   appearance: none;
   color: inherit;
   font: inherit;
   touch-action: manipulation;
 }
+.calm-ui button.weather-day .weather-day-icon {
+  font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+  font-size: 22px;
+  line-height: 1;
+  filter: drop-shadow(0 2px 3px rgba(42, 92, 142, .14));
+}
 .calm-ui button.weather-day small {
+  display: block;
+  width: 100%;
   min-width: 0;
   max-width: 100%;
   line-height: 1.35;
-  overflow-wrap: anywhere;
+}
+.calm-ui button.weather-day .weather-day-condition {
+  overflow: hidden;
+  font-size: 9px;
+  letter-spacing: -.035em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .calm-ui button.weather-day:focus-visible {
   outline: 2px solid var(--accent);
@@ -2818,6 +2839,117 @@ html[data-theme="dark"] .calm-ui .hourly-weather-empty {
 }
 @media print {
   .calm-ui button.weather-day { display: block !important; }
+}
+
+.calm-ui .current-weather > span {
+  flex: 0 0 auto;
+  font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+  font-size: 27px;
+  background: linear-gradient(145deg, #fff, #eaf4ff);
+  box-shadow: 0 7px 18px rgba(35, 100, 165, .10);
+}
+.calm-ui .current-weather > div { min-width: 0; }
+.calm-ui .current-weather strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+html[data-theme="dark"] .calm-ui .current-weather > span {
+  background: linear-gradient(145deg, #3a3a3c, #252b34);
+  box-shadow: 0 7px 18px rgba(0, 0, 0, .22);
+}
+
+@media (max-width: 760px) {
+  .calm-ui .weather-days { grid-auto-columns: 78px; }
+  .calm-ui .hourly-weather { grid-auto-columns: 92px; }
+}
+
+/* Settlement participants: one compact entry point and a mobile-friendly editor. */
+.calm-ui .participant-card-heading { align-items: center; }
+.calm-ui .participant-heading-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 7px;
+}
+.calm-ui .participant-edit-button {
+  min-width: 52px;
+  min-height: 44px;
+  padding: 8px 12px;
+  color: var(--accent-strong);
+  background: var(--accent-soft);
+  border: 0;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 750;
+  touch-action: manipulation;
+}
+.calm-ui .participant-edit-button:hover { background: var(--accent-line); }
+.calm-ui .participant-modal { width: min(520px, calc(100% - 30px)); }
+.calm-ui .participant-edit-copy {
+  margin: -8px 0 18px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.65;
+}
+.calm-ui .participant-edit-list { display: grid; gap: 9px; }
+.calm-ui .participant-edit-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 10px;
+  min-width: 0;
+  padding: 12px;
+  background: var(--paper-warm);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+}
+.calm-ui .participant-edit-row.is-inactive { border-style: dashed; }
+.calm-ui .participant-name-field {
+  display: grid;
+  min-width: 0;
+  gap: 6px;
+}
+.calm-ui .participant-name-field > span {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+}
+.calm-ui .participant-name-field input { width: 100%; min-width: 0; }
+.calm-ui .participant-active-field {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  gap: 7px;
+  padding: 0 10px;
+  color: var(--ink-soft);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  font-size: 10px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.calm-ui .participant-active-field input {
+  width: 18px;
+  height: 18px;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  accent-color: var(--accent);
+}
+html[data-theme="dark"] .calm-ui .participant-edit-button {
+  color: var(--accent-strong);
+  background: var(--accent-soft);
+}
+html[data-theme="dark"] .calm-ui .participant-edit-row,
+html[data-theme="dark"] .calm-ui .participant-active-field {
+  background: var(--paper-warm);
+  border-color: var(--line);
+}
+
+@media (max-width: 360px) {
+  .calm-ui .participant-edit-row { grid-template-columns: minmax(0, 1fr); align-items: stretch; }
+  .calm-ui .participant-active-field { justify-self: start; }
 }
 
 /* Booking specifications use one consistent inset rhythm. */

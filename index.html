@@ -31,10 +31,10 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css?v=20260801-7">
-  <link rel="stylesheet" href="poster.css?v=20260801-28">
+  <link rel="stylesheet" href="poster.css?v=20260802-30">
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.111.0/dist/umd/supabase.min.js"></script>
-  <script defer src="cloud-sync.js?v=20260801-24"></script>
-  <script defer src="app.js?v=20260801-26"></script>
+  <script defer src="cloud-sync.js?v=20260801-25"></script>
+  <script defer src="app.js?v=20260802-28"></script>
 </head>
 <body class="calm-ui" data-page="all">
   <a class="skip-link" href="#main">본문으로 바로가기</a>
@@ -256,14 +256,14 @@
             </article>
 
             <article class="card plain-card people-panel">
-              <div class="card-heading card-title-row"><h3>참가자</h3><span class="muted-badge" id="peopleCount">4명</span></div>
-              <div id="peopleList" class="people-list"></div>
+              <div class="card-heading card-title-row participant-card-heading"><h3>참가자</h3><div class="participant-heading-actions"><span class="muted-badge" id="peopleCount">4명</span><button class="participant-edit-button" id="participantEditButton" type="button" data-action="open-participants" aria-haspopup="dialog">수정</button></div></div>
+              <div id="peopleList" class="people-list" role="list"></div>
               <form id="personForm" class="person-form"><label class="visually-hidden" for="personName">참가자 이름</label><input id="personName" name="name" type="text" maxlength="30" placeholder="이름 추가" autocomplete="off" required><button class="secondary-button" type="submit">추가</button></form>
             </article>
 
             <article class="card plain-card data-panel archive-card">
               <div class="archive-stamp" aria-hidden="true">HK<br><span>2026</span></div>
-              <div><p class="card-label">SHARED DATA</p><h3>공용 저장</h3><p id="cloudDataCopy">여행방을 연결하면 네 명이 같은 내용을 볼 수 있습니다.</p><p class="cloud-data-status"><i aria-hidden="true"></i><span id="cloudStatusDetail">공용 여행방을 확인하는 중</span></p>
+              <div><p class="card-label">SHARED DATA</p><h3>공용 저장</h3><p id="cloudDataCopy">여행방을 연결하면 참가자 모두가 같은 내용을 볼 수 있습니다.</p><p class="cloud-data-status"><i aria-hidden="true"></i><span id="cloudStatusDetail">공용 여행방을 확인하는 중</span></p>
                 <div class="data-actions"><button class="secondary-button" type="button" data-action="export">전체 백업</button><label class="secondary-button" for="importFile">백업 불러오기</label><input class="visually-hidden" id="importFile" type="file" accept="application/json,.json"><button class="danger-button" type="button" data-action="reset-settlement">정산 초기화</button></div>
               </div>
             </article>
@@ -284,6 +284,15 @@
         <label class="span-2"><span>메모</span><textarea name="note" rows="3" maxlength="180" placeholder="이동 방법이나 예약 정보를 입력하세요"></textarea></label>
       </div>
       <div class="modal-actions"><button class="secondary-button" type="button" data-action="close-itinerary">취소</button><button class="primary-button" type="submit">저장</button></div>
+    </form>
+  </dialog>
+
+  <dialog class="modal participant-modal" id="participantDialog">
+    <form id="participantEditForm" class="modal-form">
+      <div class="modal-head"><div><span>정산 설정</span><h2>참가자 수정</h2></div><button class="modal-close" type="button" data-action="close-participants" aria-label="닫기">×</button></div>
+      <p class="participant-edit-copy">이름과 새 지출에 포함할 사람을 바꿀 수 있습니다. 이전 지출과 송금 내역은 그대로 유지됩니다.</p>
+      <div class="participant-edit-list" id="participantEditList"></div>
+      <div class="modal-actions"><button class="secondary-button" type="button" data-action="close-participants">취소</button><button class="primary-button" type="submit">변경 저장</button></div>
     </form>
   </dialog>
 
@@ -313,9 +322,9 @@
       <span class="cloud-join-icon" aria-hidden="true">HK</span>
       <p class="card-label">HONG KONG 2026</p>
       <h2 id="cloudJoinTitle">공용 여행에 연결</h2>
-      <p id="cloudJoinMessage">초대 코드로 연결하면 네 명이 같은 체크리스트, 일정과 정산을 봅니다.</p>
+      <p id="cloudJoinMessage">초대 코드로 연결하면 참가자 모두가 같은 체크리스트, 일정과 정산을 봅니다.</p>
       <form id="cloudJoinForm" class="cloud-join-form">
-        <label><span>내 이름</span><select id="cloudPersonName" name="person" required><option value="">선택</option><option value="민제">민제</option><option value="준호">준호</option><option value="주영">주영</option><option value="준혁">준혁</option></select></label>
+        <label><span>내 이름</span><select id="cloudPersonName" name="person" required><option value="">선택</option></select></label>
         <label><span>초대 코드</span><input id="cloudInviteCode" name="invite" type="password" minlength="24" maxlength="160" autocomplete="off" autocapitalize="off" spellcheck="false" required placeholder="HK26-…"></label>
         <button class="primary-button" id="cloudJoinSubmit" type="submit">공용 여행에 연결</button>
       </form>

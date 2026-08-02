@@ -190,8 +190,8 @@
       form?.addEventListener("submit", (event) => this.submitJoin(event));
 
       const name = document.querySelector("#cloudPersonName");
-      const savedName = cleanText(safeGet(PERSON_KEY), 20);
-      if (name && ["민제", "준호", "주영", "준혁"].includes(savedName)) name.value = savedName;
+      const savedName = cleanText(safeGet(PERSON_KEY), 30);
+      if (name && [...name.options].some((option) => option.value === savedName)) name.value = savedName;
 
       const url = new URL(window.location.href);
       const inviteFromUrl = cleanText(url.searchParams.get("invite"), 160);
@@ -220,10 +220,10 @@
       const dataCopy = document.querySelector("#cloudDataCopy");
       if (dataCopy) {
         dataCopy.textContent = status === "synced" || status === "syncing"
-          ? "체크리스트·일정·정산과 영수증을 네 명이 함께 봅니다."
+          ? "체크리스트·일정·정산과 영수증을 참가자 모두가 함께 봅니다."
           : status === "offline"
             ? "인터넷이 연결되면 이 기기의 변경 내용을 자동으로 합칩니다."
-            : "여행방을 연결하면 네 명이 같은 내용을 볼 수 있습니다.";
+            : "여행방을 연결하면 참가자 모두가 같은 내용을 볼 수 있습니다.";
       }
     }
 
@@ -264,11 +264,11 @@
       }
       const form = event.currentTarget;
       const formData = new FormData(form);
-      const personName = cleanText(formData.get("person"), 20);
+      const personName = cleanText(formData.get("person"), 30);
       const inviteCode = typeof formData.get("invite") === "string" ? formData.get("invite").trim() : "";
       const submit = document.querySelector("#cloudJoinSubmit");
       const message = document.querySelector("#cloudJoinMessage");
-      if (!["민제", "준호", "주영", "준혁"].includes(personName) || inviteCode.length < 24) {
+      if (!personName || inviteCode.length < 24) {
         if (message) {
           message.textContent = "이름과 초대 코드를 확인해 주세요.";
           message.classList.add("is-error");

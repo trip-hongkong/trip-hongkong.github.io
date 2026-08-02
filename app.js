@@ -69,6 +69,12 @@
     { id: "juyoung", label: "주영" },
     { id: "junhyuk", label: "준혁" }
   ];
+  const CHECKLIST_OWNER_PARTICIPANT_IDS = {
+    minje: "person-me",
+    junho: "person-companion",
+    juyoung: "person-companion-2",
+    junhyuk: "person-companion-3"
+  };
   const CHECK_OWNER_IDS = new Set(CHECKLIST_OWNERS.map((owner) => owner.id));
   const FIXED_PARTICIPANT_IDS = new Set(["person-me", "person-companion", "person-companion-2", "person-companion-3"]);
   const COMMON_CHECK_CATEGORIES = ["예약·티켓", "교통·이동", "함께 준비"];
@@ -693,7 +699,10 @@
   }
 
   function checklistOwnerById(id) {
-    return CHECKLIST_OWNERS.find((owner) => owner.id === id) || CHECKLIST_OWNERS[0];
+    const owner = CHECKLIST_OWNERS.find((entry) => entry.id === id) || CHECKLIST_OWNERS[0];
+    const participantId = CHECKLIST_OWNER_PARTICIPANT_IDS[owner.id];
+    const participant = participantId ? personById(participantId) : null;
+    return participant ? { ...owner, label: participant.name } : owner;
   }
 
   function prepStats(ownerId = null) {
@@ -754,6 +763,7 @@
     if (!container) return;
     const legend = createElement("legend", "visually-hidden", "체크리스트 선택");
     const controls = CHECKLIST_OWNERS.map((owner) => {
+      const displayOwner = checklistOwnerById(owner.id);
       const stats = prepStats(owner.id);
       const label = createElement("label", "checklist-owner-option");
       const input = createElement("input");
@@ -765,7 +775,7 @@
       input.checked = state.ui.activeChecklistOwner === owner.id;
       input.setAttribute("aria-controls", "beforeChecklist");
       const face = createElement("span", "checklist-owner-face");
-      face.append(createElement("b", "", owner.label), createElement("small", "", `${stats.done}/${stats.total}`));
+      face.append(createElement("b", "", displayOwner.label), createElement("small", "", `${stats.done}/${stats.total}`));
       label.append(input, face);
       return label;
     });
@@ -999,15 +1009,16 @@
   }
 
   function weatherInfo(code) {
-    if (code === 0) return { icon: "☀", label: "맑음" };
-    if ([1, 2].includes(code)) return { icon: "◑", label: "대체로 맑음" };
-    if (code === 3) return { icon: "☁", label: "흐림" };
-    if ([45, 48].includes(code)) return { icon: "≋", label: "안개" };
-    if ([51, 53, 55, 56, 57].includes(code)) return { icon: "⌁", label: "이슬비" };
-    if ([61, 63, 65, 66, 67, 80, 81, 82].includes(code)) return { icon: "☂", label: "비" };
-    if ([71, 73, 75, 77, 85, 86].includes(code)) return { icon: "❄", label: "눈" };
-    if ([95, 96, 99].includes(code)) return { icon: "ϟ", label: "뇌우" };
-    return { icon: "◌", label: "날씨" };
+    if (code === 0) return { icon: "☀️", kind: "sunny", label: "맑음" };
+    if ([1, 2].includes(code)) return { icon: "🌤️", kind: "partly-cloudy", label: "대체로 맑음" };
+    if (code === 3) return { icon: "☁️", kind: "cloudy", label: "흐림" };
+    if ([45, 48].includes(code)) return { icon: "🌫️", kind: "fog", label: "안개" };
+    if ([51, 53, 55, 56, 57].includes(code)) return { icon: "🌦️", kind: "drizzle", label: "이슬비" };
+    if ([61, 63, 65, 66, 67].includes(code)) return { icon: "🌧️", kind: "rain", label: "비" };
+    if ([80, 81, 82].includes(code)) return { icon: "🌦️", kind: "showers", label: "소나기" };
+    if ([71, 73, 75, 77, 85, 86].includes(code)) return { icon: "🌨️", kind: "snow", label: "눈" };
+    if ([95, 96, 99].includes(code)) return { icon: "⛈️", kind: "thunder", label: "뇌우" };
+    return { icon: "🌡️", kind: "unknown", label: "날씨" };
   }
 
   function renderHomeWeather(data) {
@@ -1035,10 +1046,12 @@
     if (data && data.current) {
       const info = weatherInfo(Number(data.current.weather_code));
       currentIcon.textContent = info.icon;
+      currentIcon.dataset.weatherKind = info.kind;
       currentText.textContent = `${Math.round(Number(data.current.temperature_2m))}° · ${info.label}`;
       currentDetail.textContent = `체감 ${Math.round(Number(data.current.apparent_temperature))}° · 습도 ${Math.round(Number(data.current.relative_humidity_2m))}%`;
     } else {
-      currentIcon.textContent = "◌";
+      currentIcon.textContent = "🌡️";
+      currentIcon.dataset.weatherKind = "unknown";
       currentText.textContent = "확인 전";
       currentDetail.textContent = "날씨 연결 필요";
     }
@@ -1061,10 +1074,10 @@
       card.append(time);
       if ([max, min, code].every(Number.isFinite)) {
         const info = weatherInfo(code);
-        card.append(createElement("span", "", info.icon), createElement("strong", "", `${Math.round(max)}°/${Math.round(min)}°`), createElement("small", "", info.label));
+        card.append(createElement("span", `weather-day-icon is-${info.kind}`, info.icon), createElement("strong", "", `${Math.round(max)}°/${Math.round(min)}°`), createElement("small", "weather-day-condition", info.label));
         card.setAttribute("aria-label", `8월 ${tripDay.number}일 ${tripDay.weekday}요일 날씨, ${info.label}, 최고 ${Math.round(max)}도, 최저 ${Math.round(min)}도`);
       } else {
-        card.append(createElement("span", "", "◌"), createElement("strong", "", "예보 전"), createElement("small", "", "준비 중"));
+        card.append(createElement("span", "weather-day-icon is-unknown", "🌡️"), createElement("strong", "", "예보 전"), createElement("small", "weather-day-condition", "준비 중"));
         card.setAttribute("aria-label", `8월 ${tripDay.number}일 ${tripDay.weekday}요일 날씨, 예보 준비 중`);
       }
       days.append(card);
@@ -1125,7 +1138,7 @@
       const card = createElement("article", "hourly-weather-item");
       const time = createElement("time", "", timeText);
       time.dateTime = stamp;
-      const icon = createElement("span", "hourly-weather-icon", info.icon);
+      const icon = createElement("span", `hourly-weather-icon is-${info.kind}`, info.icon);
       icon.setAttribute("aria-hidden", "true");
       const temperature = createElement("strong", "", Number.isFinite(temp) ? `${Math.round(temp)}°` : "--");
       const detail = createElement("small", "hourly-weather-detail");
@@ -1335,7 +1348,8 @@
     container.replaceChildren();
     state.participants.forEach((person) => {
       const pill = createElement("span", `person-pill${person.active ? "" : " is-inactive"}`);
-      pill.append(createElement("span", "", person.active ? person.name : `${person.name} · 이전 내역`));
+      pill.setAttribute("role", "listitem");
+      pill.append(createElement("span", "", person.active ? person.name : `${person.name} · 정산 제외`));
       if (person.active && !FIXED_PARTICIPANT_IDS.has(person.id)) {
         const remove = createElement("button", "", "×");
         remove.type = "button";
@@ -1347,6 +1361,56 @@
       container.append(pill);
     });
     if ($("#peopleCount")) $("#peopleCount").textContent = `${state.participants.filter((person) => person.active).length}명`;
+    renderCloudParticipantOptions();
+  }
+
+  function renderCloudParticipantOptions() {
+    const select = $("#cloudPersonName");
+    if (!select) return;
+    const previous = select.value;
+    const placeholder = createElement("option", "", "선택");
+    placeholder.value = "";
+    const options = state.participants.filter((person) => person.active).map((person) => {
+      const option = createElement("option", "", person.name);
+      option.value = person.name;
+      return option;
+    });
+    select.replaceChildren(placeholder, ...options);
+    if (options.some((option) => option.value === previous)) select.value = previous;
+  }
+
+  function renderParticipantEditor() {
+    const list = $("#participantEditList");
+    if (!list) return;
+    list.replaceChildren();
+    state.participants.forEach((person, index) => {
+      const row = createElement("div", `participant-edit-row${person.active ? "" : " is-inactive"}`);
+      row.dataset.id = person.id;
+
+      const nameLabel = createElement("label", "participant-name-field");
+      nameLabel.append(createElement("span", "", `참가자 ${index + 1}`));
+      const input = createElement("input");
+      input.type = "text";
+      input.name = "participantName";
+      input.value = person.name;
+      input.maxLength = 30;
+      input.autocomplete = "off";
+      input.required = true;
+      input.dataset.participantId = person.id;
+      input.setAttribute("aria-label", `참가자 ${index + 1} 이름`);
+      nameLabel.append(input);
+
+      const activeLabel = createElement("label", "participant-active-field");
+      const checkbox = createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.name = "participantActive";
+      checkbox.value = person.id;
+      checkbox.checked = person.active;
+      checkbox.setAttribute("aria-label", `${person.name} 새 정산에 포함`);
+      activeLabel.append(checkbox, createElement("span", "", "정산 포함"));
+      row.append(nameLabel, activeLabel);
+      list.append(row);
+    });
   }
 
   function renderExpensePeople() {
@@ -1393,7 +1457,12 @@
         transferList.append(row);
       });
     }
-    state.participants.forEach((person) => {
+    const referencedIds = new Set();
+    state.expenses.forEach((expense) => {
+      referencedIds.add(expense.payerId);
+      expense.split.participantIds.forEach((id) => referencedIds.add(id));
+    });
+    state.participants.filter((person) => person.active || referencedIds.has(person.id)).forEach((person) => {
       const amount = balances.get(person.id) || 0;
       const chip = createElement("span", "balance-chip");
       chip.append(createElement("span", "", person.name), createElement("b", "", amount > 0 ? `+${formatKRW(amount)}` : formatKRW(amount)));
@@ -1471,7 +1540,7 @@
     if ($("#receiptCount")) $("#receiptCount").textContent = `영수증 ${state.expenses.filter((expense) => expense.receiptId).length}장`;
     if ($("#transferCount")) $("#transferCount").textContent = `${transfers.length}건`;
     if ($("#settlementHeadline")) $("#settlementHeadline").textContent = transfers.length ? `송금 ${transfers.length}건 필요` : "정산할 금액 없음";
-    if ($("#settlementSubline")) $("#settlementSubline").textContent = state.expenses.length ? `${state.participants.length}명 기준` : "지출을 추가해 주세요";
+    if ($("#settlementSubline")) $("#settlementSubline").textContent = state.expenses.length ? `새 지출 ${state.participants.filter((person) => person.active).length}명 기준` : "지출을 추가해 주세요";
     renderTransfers(balances, transfers);
     renderExpenseList();
     renderRate();
@@ -1542,6 +1611,59 @@
   function closeDialog(selector) {
     const dialog = $(selector);
     if (dialog && dialog.open) dialog.close();
+  }
+
+  function openParticipantDialog() {
+    const dialog = $("#participantDialog");
+    if (!dialog) return;
+    renderParticipantEditor();
+    dialog.showModal();
+    window.setTimeout(() => $("[data-participant-id]", dialog)?.focus(), 50);
+  }
+
+  function saveParticipantEdits(event) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const inputs = $$('[data-participant-id]', form);
+    const updates = [];
+    const names = new Set();
+
+    for (const input of inputs) {
+      input.setCustomValidity("");
+      const name = cleanText(input.value, 30);
+      const normalizedName = name.toLocaleLowerCase();
+      if (!name) {
+        input.setCustomValidity("이름을 입력해 주세요.");
+        input.reportValidity();
+        return;
+      }
+      if (names.has(normalizedName)) {
+        input.setCustomValidity("같은 이름의 참가자가 있습니다.");
+        input.reportValidity();
+        return;
+      }
+      names.add(normalizedName);
+      updates.push({ id: input.dataset.participantId, name });
+    }
+
+    const activeIds = new Set(new FormData(form).getAll("participantActive"));
+    if (!activeIds.size) {
+      showToast("정산 참가자는 한 명 이상 필요합니다", true);
+      $("[name='participantActive']", form)?.focus();
+      return;
+    }
+
+    updates.forEach((update) => {
+      const person = personById(update.id);
+      if (!person) return;
+      person.name = update.name;
+      person.active = activeIds.has(person.id);
+    });
+    saveState(false);
+    closeDialog("#participantDialog");
+    renderSettlement();
+    renderPrepare();
+    showToast("정산 참가자를 수정했습니다");
   }
 
   function openExpenseDialog() {
@@ -1813,7 +1935,7 @@
     const person = personById(id);
     if (!person || !person.active) return;
     if (FIXED_PARTICIPANT_IDS.has(id)) {
-      showToast("민제·준호·주영·준혁은 개인 체크리스트가 있어 삭제할 수 없습니다", true);
+      showToast("개인 체크리스트가 연결된 참가자는 수정 화면에서 정산 포함을 꺼주세요", true);
       return;
     }
     if (state.participants.filter((entry) => entry.active).length <= 1) {
@@ -1975,6 +2097,8 @@
     if (action === "open-itinerary") openItineraryDialog();
     if (action === "close-itinerary") closeDialog("#itineraryDialog");
     if (action === "open-expense") openExpenseDialog();
+    if (action === "open-participants") openParticipantDialog();
+    if (action === "close-participants") closeDialog("#participantDialog");
     if (action === "close-expense") {
       if ($("#expenseSubmit")?.disabled) {
         showToast("저장 중입니다. 잠시만 기다려 주세요.");
@@ -2007,6 +2131,14 @@
 
   function bindEvents() {
     document.addEventListener("click", handleClick);
+    $("#weatherDays")?.addEventListener("click", (event) => {
+      const target = event.target instanceof Element ? event.target : null;
+      const weatherDateButton = target?.closest(".weather-day[data-date]");
+      if (!weatherDateButton) return;
+      event.preventDefault();
+      event.stopPropagation();
+      setActiveDate(weatherDateButton.dataset.date, "weather");
+    });
     document.addEventListener("change", (event) => {
       const ownerInput = event.target.closest("[data-check-owner]");
       if (ownerInput && ownerInput.checked && CHECK_OWNER_IDS.has(ownerInput.dataset.checkOwner)) {
@@ -2070,7 +2202,7 @@
       event.preventDefault();
       const name = cleanText(new FormData(event.currentTarget).get("name"), 30);
       if (!name) return;
-      if (state.participants.some((person) => person.active && person.name.toLocaleLowerCase() === name.toLocaleLowerCase())) {
+      if (state.participants.some((person) => person.name.toLocaleLowerCase() === name.toLocaleLowerCase())) {
         showToast("같은 이름의 참가자가 있습니다", true);
         return;
       }
@@ -2080,6 +2212,8 @@
       renderSettlement();
       showToast("참가자를 추가했습니다");
     });
+
+    $("#participantEditForm")?.addEventListener("submit", saveParticipantEdits);
 
     $("#expenseForm")?.addEventListener("submit", addExpense);
     $("#receiptInput")?.addEventListener("change", (event) => previewReceipt(event.target.files?.[0]));
@@ -2095,6 +2229,7 @@
     $$("dialog").forEach((dialog) => {
       dialog.addEventListener("close", () => {
         if (dialog.id === "expenseDialog" && !$("#expenseSubmit")?.disabled) clearPendingReceipt();
+        if (dialog.id === "participantDialog") $("#participantEditButton")?.focus();
       });
       dialog.addEventListener("cancel", (event) => {
         if (dialog.id === "expenseDialog" && $("#expenseSubmit")?.disabled) event.preventDefault();
