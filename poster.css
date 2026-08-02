@@ -2727,11 +2727,12 @@ html[data-theme="dark"] .calm-ui .cloud-join-card > p.is-error { color: #ff6961;
   font: 650 10px/1.2 var(--latin);
 }
 .calm-ui .hourly-weather-icon {
-  margin: 8px 0 3px;
-  font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
-  font-size: 24px;
-  line-height: 1;
-  filter: drop-shadow(0 2px 3px rgba(42, 92, 142, .14));
+  display: block;
+  width: 42px;
+  height: 42px;
+  margin: 4px 0 1px;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 6px rgba(42, 92, 142, .14));
 }
 .calm-ui .hourly-weather-item strong {
   color: var(--ink);
@@ -2811,10 +2812,12 @@ html[data-theme="dark"] .calm-ui .hourly-weather-empty {
   touch-action: manipulation;
 }
 .calm-ui button.weather-day .weather-day-icon {
-  font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
-  font-size: 22px;
-  line-height: 1;
-  filter: drop-shadow(0 2px 3px rgba(42, 92, 142, .14));
+  display: block;
+  width: 38px;
+  height: 38px;
+  margin: 2px auto 0;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 6px rgba(42, 92, 142, .13));
 }
 .calm-ui button.weather-day small {
   display: block;
@@ -2843,10 +2846,17 @@ html[data-theme="dark"] .calm-ui .hourly-weather-empty {
 
 .calm-ui .current-weather > span {
   flex: 0 0 auto;
-  font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
-  font-size: 27px;
+  width: 54px;
+  height: 54px;
   background: linear-gradient(145deg, #fff, #eaf4ff);
   box-shadow: 0 7px 18px rgba(35, 100, 165, .10);
+}
+.calm-ui .current-weather-glyph {
+  display: block;
+  width: 58px;
+  height: 58px;
+  object-fit: contain;
+  filter: drop-shadow(0 6px 9px rgba(42, 92, 142, .16));
 }
 .calm-ui .current-weather > div { min-width: 0; }
 .calm-ui .current-weather strong {

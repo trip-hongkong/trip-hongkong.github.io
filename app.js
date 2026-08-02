@@ -11,7 +11,9 @@
   const END_DATE = "2026-08-19";
   const TIMEZONE = "Asia/Hong_Kong";
   const PAGE = document.body.dataset.page || "home";
-  const WEATHER_URL = "https://api.open-meteo.com/v1/forecast?latitude=22.3193&longitude=114.1694&timezone=Asia%2FHong_Kong&forecast_days=16&current=temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&hourly=temperature_2m,apparent_temperature,precipitation_probability,weather_code";
+  const WEATHER_URL = "https://api.open-meteo.com/v1/forecast?latitude=22.3193&longitude=114.1694&timezone=Asia%2FHong_Kong&forecast_days=16&current=temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,wind_speed_10m,is_day&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&hourly=temperature_2m,apparent_temperature,precipitation_probability,weather_code,is_day";
+  // Meteocons by Bas Milius (MIT): https://github.com/basmilius/meteocons
+  const WEATHER_ICON_BASE = "https://cdn.jsdelivr.net/npm/@bybas/weather-icons@2.0.0/production/fill/all/";
   const RATE_URL = "https://api.frankfurter.dev/v2/rate/HKD/KRW";
 
   const TRIP_DAYS = [
@@ -1008,17 +1010,34 @@
     renderTripWeather(state.weatherCache ? state.weatherCache.data : null, Boolean(state.weatherCache));
   }
 
-  function weatherInfo(code) {
-    if (code === 0) return { icon: "☀️", kind: "sunny", label: "맑음" };
-    if ([1, 2].includes(code)) return { icon: "🌤️", kind: "partly-cloudy", label: "대체로 맑음" };
-    if (code === 3) return { icon: "☁️", kind: "cloudy", label: "흐림" };
-    if ([45, 48].includes(code)) return { icon: "🌫️", kind: "fog", label: "안개" };
-    if ([51, 53, 55, 56, 57].includes(code)) return { icon: "🌦️", kind: "drizzle", label: "이슬비" };
-    if ([61, 63, 65, 66, 67].includes(code)) return { icon: "🌧️", kind: "rain", label: "비" };
-    if ([80, 81, 82].includes(code)) return { icon: "🌦️", kind: "showers", label: "소나기" };
-    if ([71, 73, 75, 77, 85, 86].includes(code)) return { icon: "🌨️", kind: "snow", label: "눈" };
-    if ([95, 96, 99].includes(code)) return { icon: "⛈️", kind: "thunder", label: "뇌우" };
-    return { icon: "🌡️", kind: "unknown", label: "날씨" };
+  function weatherInfo(code, isDay = true) {
+    const phase = isDay === false || isDay === 0 ? "night" : "day";
+    if (code === 0) return { iconName: `clear-${phase}`, kind: "sunny", label: "맑음" };
+    if (code === 1) return { iconName: `partly-cloudy-${phase}`, kind: "mostly-clear", label: "대체로 맑음" };
+    if (code === 2) return { iconName: `partly-cloudy-${phase}`, kind: "partly-cloudy", label: "구름 조금" };
+    if (code === 3) return { iconName: "overcast", kind: "cloudy", label: "흐림" };
+    if ([45, 48].includes(code)) return { iconName: "fog", kind: "fog", label: "안개" };
+    if ([51, 53, 55].includes(code)) return { iconName: "drizzle", kind: "drizzle", label: "이슬비" };
+    if ([56, 57, 66, 67].includes(code)) return { iconName: "sleet", kind: "sleet", label: "진눈깨비" };
+    if ([61, 63, 65].includes(code)) return { iconName: "rain", kind: "rain", label: "비" };
+    if ([80, 81, 82].includes(code)) return { iconName: `partly-cloudy-${phase}-rain`, kind: "showers", label: "소나기" };
+    if ([71, 73, 75, 77].includes(code)) return { iconName: "snow", kind: "snow", label: "눈" };
+    if ([85, 86].includes(code)) return { iconName: `partly-cloudy-${phase}-snow`, kind: "snow", label: "눈" };
+    if (code === 95) return { iconName: `thunderstorms-${phase}`, kind: "thunder", label: "뇌우" };
+    if ([96, 99].includes(code)) return { iconName: `thunderstorms-${phase}-rain`, kind: "thunder", label: "뇌우" };
+    return { iconName: "not-available", kind: "unknown", label: "날씨" };
+  }
+
+  function createWeatherIcon(info, className, eager = false) {
+    const icon = createElement("img", `${className} is-${info.kind}`);
+    icon.src = `${WEATHER_ICON_BASE}${info.iconName}.svg`;
+    icon.alt = "";
+    icon.width = 64;
+    icon.height = 64;
+    icon.decoding = "async";
+    icon.setAttribute("aria-hidden", "true");
+    if (!eager) icon.loading = "lazy";
+    return icon;
   }
 
   function renderHomeWeather(data) {
@@ -1031,7 +1050,7 @@
       return;
     }
     const temp = Number(data.current.temperature_2m);
-    const info = weatherInfo(Number(data.current.weather_code));
+    const info = weatherInfo(Number(data.current.weather_code), Number(data.current.is_day));
     text.textContent = `${Number.isFinite(temp) ? Math.round(temp) + "°" : "--"} · ${info.label}`;
     detail.textContent = `체감 ${Math.round(Number(data.current.apparent_temperature))}° · 습도 ${Math.round(Number(data.current.relative_humidity_2m))}%`;
   }
@@ -1044,14 +1063,15 @@
     if (!days) return;
     days.replaceChildren();
     if (data && data.current) {
-      const info = weatherInfo(Number(data.current.weather_code));
-      currentIcon.textContent = info.icon;
+      const info = weatherInfo(Number(data.current.weather_code), Number(data.current.is_day));
+      currentIcon.replaceChildren(createWeatherIcon(info, "current-weather-glyph", true));
       currentIcon.dataset.weatherKind = info.kind;
       currentText.textContent = `${Math.round(Number(data.current.temperature_2m))}° · ${info.label}`;
       currentDetail.textContent = `체감 ${Math.round(Number(data.current.apparent_temperature))}° · 습도 ${Math.round(Number(data.current.relative_humidity_2m))}%`;
     } else {
-      currentIcon.textContent = "🌡️";
-      currentIcon.dataset.weatherKind = "unknown";
+      const info = weatherInfo(NaN);
+      currentIcon.replaceChildren(createWeatherIcon(info, "current-weather-glyph", true));
+      currentIcon.dataset.weatherKind = info.kind;
       currentText.textContent = "확인 전";
       currentDetail.textContent = "날씨 연결 필요";
     }
@@ -1074,10 +1094,10 @@
       card.append(time);
       if ([max, min, code].every(Number.isFinite)) {
         const info = weatherInfo(code);
-        card.append(createElement("span", `weather-day-icon is-${info.kind}`, info.icon), createElement("strong", "", `${Math.round(max)}°/${Math.round(min)}°`), createElement("small", "weather-day-condition", info.label));
+        card.append(createWeatherIcon(info, "weather-day-icon"), createElement("strong", "", `${Math.round(max)}°/${Math.round(min)}°`), createElement("small", "weather-day-condition", info.label));
         card.setAttribute("aria-label", `8월 ${tripDay.number}일 ${tripDay.weekday}요일 날씨, ${info.label}, 최고 ${Math.round(max)}도, 최저 ${Math.round(min)}도`);
       } else {
-        card.append(createElement("span", "weather-day-icon is-unknown", "🌡️"), createElement("strong", "", "예보 전"), createElement("small", "weather-day-condition", "준비 중"));
+        card.append(createWeatherIcon(weatherInfo(NaN), "weather-day-icon"), createElement("strong", "", "예보 전"), createElement("small", "weather-day-condition", "준비 중"));
         card.setAttribute("aria-label", `8월 ${tripDay.number}일 ${tripDay.weekday}요일 날씨, 예보 준비 중`);
       }
       days.append(card);
@@ -1132,14 +1152,13 @@
       const feels = Number(hourly.apparent_temperature?.[index]);
       const rain = Number(hourly.precipitation_probability?.[index]);
       const code = Number(hourly.weather_code?.[index]);
-      const info = weatherInfo(code);
+      const info = weatherInfo(code, Number(hourly.is_day?.[index]));
       const timeText = stamp.slice(11, 16);
       const rainText = Number.isFinite(rain) ? `${Math.round(rain)}%` : "--";
       const card = createElement("article", "hourly-weather-item");
       const time = createElement("time", "", timeText);
       time.dateTime = stamp;
-      const icon = createElement("span", `hourly-weather-icon is-${info.kind}`, info.icon);
-      icon.setAttribute("aria-hidden", "true");
+      const icon = createWeatherIcon(info, "hourly-weather-icon");
       const temperature = createElement("strong", "", Number.isFinite(temp) ? `${Math.round(temp)}°` : "--");
       const detail = createElement("small", "hourly-weather-detail");
       detail.append(
@@ -1156,7 +1175,7 @@
   async function fetchWeather(force = false) {
     if (weatherRequest) return weatherRequest;
     const age = state.weatherCache ? Date.now() - new Date(state.weatherCache.fetchedAt).getTime() : Infinity;
-    if (!force && state.weatherCache?.data?.hourly && age < 30 * 60 * 1000) {
+    if (!force && state.weatherCache?.data?.hourly?.is_day && age < 30 * 60 * 1000) {
       renderHomeWeather(state.weatherCache.data);
       renderTripWeather(state.weatherCache.data);
       return;
