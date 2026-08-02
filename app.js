@@ -975,7 +975,7 @@
     if (copy) copy.dataset.copy = stay.address;
   }
 
-  function setActiveDate(date, focus = false) {
+  function setActiveDate(date, focusTarget = "") {
     if (!VALID_DATES.has(date)) return;
     state.ui.activeDate = date;
     saveState(false);
@@ -983,7 +983,12 @@
     renderTimeline();
     renderStayCard();
     renderTripWeather(state.weatherCache ? state.weatherCache.data : null);
-    if (focus) $(`.day-tab[data-date="${date}"]`)?.focus();
+    const focusSelector = focusTarget === "weather"
+      ? `.weather-day[data-date="${date}"]`
+      : focusTarget === "day"
+        ? `.day-tab[data-date="${date}"]`
+        : "";
+    if (focusSelector) $(focusSelector)?.focus({ preventScroll: true });
   }
 
   function renderTrip() {
@@ -1046,15 +1051,21 @@
       const max = rawMax === null || rawMax === undefined ? NaN : Number(rawMax);
       const min = rawMin === null || rawMin === undefined ? NaN : Number(rawMin);
       const code = rawCode === null || rawCode === undefined ? NaN : Number(rawCode);
-      const card = createElement("article", `weather-day${tripDay.date === state.ui.activeDate ? " is-selected" : ""}`);
+      const isSelected = tripDay.date === state.ui.activeDate;
+      const card = createElement("button", `weather-day${isSelected ? " is-selected" : ""}`);
+      card.type = "button";
+      card.dataset.date = tripDay.date;
+      card.setAttribute("aria-pressed", String(isSelected));
       const time = createElement("time", "", `${tripDay.number} ${tripDay.weekday}`);
       time.dateTime = tripDay.date;
       card.append(time);
       if ([max, min, code].every(Number.isFinite)) {
         const info = weatherInfo(code);
         card.append(createElement("span", "", info.icon), createElement("strong", "", `${Math.round(max)}°/${Math.round(min)}°`), createElement("small", "", info.label));
+        card.setAttribute("aria-label", `8월 ${tripDay.number}일 ${tripDay.weekday}요일 날씨, ${info.label}, 최고 ${Math.round(max)}도, 최저 ${Math.round(min)}도`);
       } else {
         card.append(createElement("span", "", "◌"), createElement("strong", "", "예보 전"), createElement("small", "", "준비 중"));
+        card.setAttribute("aria-label", `8월 ${tripDay.number}일 ${tripDay.weekday}요일 날씨, 예보 준비 중`);
       }
       days.append(card);
     });
@@ -1117,7 +1128,11 @@
       const icon = createElement("span", "hourly-weather-icon", info.icon);
       icon.setAttribute("aria-hidden", "true");
       const temperature = createElement("strong", "", Number.isFinite(temp) ? `${Math.round(temp)}°` : "--");
-      const detail = createElement("small", "", `${info.label} · 강수 ${rainText}`);
+      const detail = createElement("small", "hourly-weather-detail");
+      detail.append(
+        createElement("span", "hourly-weather-condition", info.label),
+        createElement("span", "hourly-weather-rain", `강수 ${rainText}`)
+      );
       card.setAttribute("aria-label", `${timeText}, ${info.label}, ${Number.isFinite(temp) ? Math.round(temp) + "도" : "기온 정보 없음"}, 강수확률 ${rainText}`);
       if (Number.isFinite(feels)) card.title = `체감 ${Math.round(feels)}°`;
       card.append(time, icon, temperature, detail);
@@ -1938,7 +1953,12 @@
     }
     const dateButton = event.target.closest(".day-tab[data-date]");
     if (dateButton) {
-      setActiveDate(dateButton.dataset.date, true);
+      setActiveDate(dateButton.dataset.date, "day");
+      return;
+    }
+    const weatherDateButton = event.target.closest(".weather-day[data-date]");
+    if (weatherDateButton) {
+      setActiveDate(weatherDateButton.dataset.date, "weather");
       return;
     }
     const copyButton = event.target.closest("[data-copy]");
@@ -2096,7 +2116,7 @@
       if (event.key === "ArrowRight") next = (current + 1) % TRIP_DAYS.length;
       if (event.key === "Home") next = 0;
       if (event.key === "End") next = TRIP_DAYS.length - 1;
-      setActiveDate(TRIP_DAYS[next].date, true);
+      setActiveDate(TRIP_DAYS[next].date, "day");
     });
 
     $(".phase-tabs")?.addEventListener("keydown", (event) => {
