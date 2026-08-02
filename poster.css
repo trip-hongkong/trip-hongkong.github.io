@@ -1172,6 +1172,13 @@ html { background: var(--cream); }
 .calm-ui .during-grid { grid-template-columns: minmax(0, 1.58fr) minmax(280px, .72fr); gap: 20px; }
 .calm-ui .during-main,
 .calm-ui .during-side { gap: 16px; }
+.calm-ui .during-main { grid-template-columns: minmax(0, 1fr); min-width: 0; }
+.calm-ui .during-main > .card,
+.calm-ui .during-side > .card {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
 .calm-ui .itinerary-panel { min-height: 500px; padding: 30px; }
 .calm-ui .timeline-item {
   position: relative;
@@ -2699,6 +2706,9 @@ html[data-theme="dark"] .calm-ui .cloud-join-card > p.is-error { color: #ff6961;
 }
 .calm-ui .hourly-weather {
   display: grid;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
   grid-auto-flow: column;
   grid-auto-columns: minmax(88px, 1fr);
   gap: 7px;
@@ -2853,8 +2863,8 @@ html[data-theme="dark"] .calm-ui .hourly-weather-empty {
 }
 .calm-ui .current-weather-glyph {
   display: block;
-  width: 58px;
-  height: 58px;
+  width: 52px;
+  height: 52px;
   object-fit: contain;
   filter: drop-shadow(0 6px 9px rgba(42, 92, 142, .16));
 }
@@ -2871,6 +2881,26 @@ html[data-theme="dark"] .calm-ui .current-weather > span {
 @media (max-width: 760px) {
   .calm-ui .weather-days { grid-auto-columns: 78px; }
   .calm-ui .hourly-weather { grid-auto-columns: 92px; }
+}
+
+@media (hover: hover) and (pointer: fine) and (min-width: 761px) {
+  .calm-ui .hourly-weather {
+    padding-bottom: 10px;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 113, 227, .28) transparent;
+  }
+  .calm-ui .hourly-weather::-webkit-scrollbar { display: block; height: 6px; }
+  .calm-ui .hourly-weather::-webkit-scrollbar-track { background: transparent; }
+  .calm-ui .hourly-weather::-webkit-scrollbar-thumb {
+    background: rgba(0, 113, 227, .25);
+    border-radius: 999px;
+  }
+  html[data-theme="dark"] .calm-ui .hourly-weather {
+    scrollbar-color: rgba(90, 200, 250, .32) transparent;
+  }
+  html[data-theme="dark"] .calm-ui .hourly-weather::-webkit-scrollbar-thumb {
+    background: rgba(90, 200, 250, .30);
+  }
 }
 
 /* Settlement participants: one compact entry point and a mobile-friendly editor. */
