@@ -2908,6 +2908,30 @@ html[data-theme="dark"] .calm-ui .current-weather > span {
   }
 }
 
+/* Timeline editing stays visible without competing with the destructive action. */
+.calm-ui .timeline-edit-button {
+  min-width: 48px;
+  min-height: 32px;
+  padding: 0 11px;
+  color: var(--accent-strong);
+  background: var(--accent-soft);
+  border: 0;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 750;
+  line-height: 1;
+  touch-action: manipulation;
+}
+.calm-ui .timeline-edit-button:hover { background: var(--accent-line); }
+html[data-theme="dark"] .calm-ui .timeline-edit-button {
+  color: var(--accent-strong);
+  background: var(--accent-soft);
+}
+
+@media (max-width: 760px), (hover: none) {
+  .calm-ui .timeline-edit-button { min-height: 44px; }
+}
+
 /* Settlement participants: one compact entry point and a mobile-friendly editor. */
 .calm-ui .participant-card-heading { align-items: center; }
 .calm-ui .participant-heading-actions {

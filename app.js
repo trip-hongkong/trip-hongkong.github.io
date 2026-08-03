@@ -953,7 +953,13 @@
       const marker = createElement("span", "timeline-marker");
       const copy = createElement("div", "timeline-copy");
       const titleRow = createElement("div", "timeline-title-row");
-      titleRow.append(createElement("h3", "", item.title));
+      const edit = createElement("button", "timeline-edit-button", "수정");
+      edit.type = "button";
+      edit.dataset.action = "edit-itinerary";
+      edit.dataset.id = item.id;
+      edit.setAttribute("aria-haspopup", "dialog");
+      edit.setAttribute("aria-label", `${item.title} 수정`);
+      titleRow.append(createElement("h3", "", item.title), edit);
       copy.append(titleRow);
       if (item.note) copy.append(createElement("p", "", item.note));
       if (item.place) {
@@ -1613,18 +1619,33 @@
     }
   }
 
-  function openItineraryDialog(prefill = null) {
+  function updateItineraryDialogDate(date) {
+    const day = TRIP_DAYS.find((item) => item.date === date) || selectedDay();
+    if ($("#itineraryDialogDate")) $("#itineraryDialogDate").textContent = `8월 ${day.number}일`;
+  }
+
+  function openItineraryDialog(prefill = null, itineraryId = "") {
     const dialog = $("#itineraryDialog");
     const form = $("#itineraryForm");
     if (!dialog || !form) return;
     form.reset();
-    $("#itineraryDate").value = state.ui.activeDate;
-    if (prefill) {
+    delete form.dataset.editingId;
+    const editingItem = itineraryId ? state.itinerary.find((item) => item.id === itineraryId) : null;
+    const date = editingItem?.date || state.ui.activeDate;
+    $("#itineraryDate").value = date;
+    if (editingItem) {
+      form.dataset.editingId = editingItem.id;
+      form.elements.time.value = editingItem.time;
+      $("#itineraryTitle").value = editingItem.title;
+      $("#itineraryPlace").value = editingItem.place;
+      form.elements.note.value = editingItem.note;
+    } else if (prefill) {
       $("#itineraryTitle").value = prefill.description;
       $("#itineraryPlace").value = prefill.name;
     }
-    const day = selectedDay();
-    $("#itineraryDialogDate").textContent = `8월 ${day.number}일`;
+    if ($("#itineraryDialogMode")) $("#itineraryDialogMode").textContent = editingItem ? "일정 수정" : "일정 추가";
+    if ($("#itinerarySubmit")) $("#itinerarySubmit").textContent = editingItem ? "수정 저장" : "저장";
+    updateItineraryDialogDate(date);
     dialog.showModal();
     window.setTimeout(() => $("#itineraryTitle")?.focus(), 50);
   }
@@ -2116,6 +2137,7 @@
     if (action === "refresh-rate") fetchRate(true);
     if (action === "toggle-theme") toggleTheme();
     if (action === "open-itinerary") openItineraryDialog();
+    if (action === "edit-itinerary") openItineraryDialog(null, id);
     if (action === "close-itinerary") closeDialog("#itineraryDialog");
     if (action === "open-expense") openExpenseDialog();
     if (action === "open-participants") openParticipantDialog();
@@ -2207,17 +2229,37 @@
 
     $("#itineraryForm")?.addEventListener("submit", (event) => {
       event.preventDefault();
-      const formData = new FormData(event.currentTarget);
+      const form = event.currentTarget;
+      const formData = new FormData(form);
       const title = cleanText(formData.get("title"), 80);
       if (!title) return;
       const date = VALID_DATES.has(formData.get("date")) ? formData.get("date") : state.ui.activeDate;
-      state.itinerary.push({ id: makeId("plan"), date, time: /^([01]\d|2[0-3]):[0-5]\d$/.test(formData.get("time")) ? formData.get("time") : "", status: "custom", title, place: cleanText(formData.get("place"), 100), note: cleanText(formData.get("note"), 180) });
+      const editingId = cleanText(form.dataset.editingId, 100);
+      const editingIndex = editingId ? state.itinerary.findIndex((item) => item.id === editingId) : -1;
+      if (editingId && editingIndex < 0) {
+        closeDialog("#itineraryDialog");
+        showToast("수정할 일정을 찾지 못했습니다", true);
+        return;
+      }
+      const nextItem = {
+        id: editingId || makeId("plan"),
+        date,
+        time: /^([01]\d|2[0-3]):[0-5]\d$/.test(formData.get("time")) ? formData.get("time") : "",
+        status: editingIndex >= 0 ? state.itinerary[editingIndex].status : "custom",
+        title,
+        place: cleanText(formData.get("place"), 100),
+        note: cleanText(formData.get("note"), 180)
+      };
+      if (editingIndex >= 0) state.itinerary[editingIndex] = nextItem;
+      else state.itinerary.push(nextItem);
       state.ui.activeDate = date;
       saveState(false);
       closeDialog("#itineraryDialog");
       renderTrip();
-      showToast("일정을 저장했습니다");
+      showToast(editingIndex >= 0 ? "일정을 수정했습니다" : "일정을 저장했습니다");
     });
+
+    $("#itineraryDate")?.addEventListener("change", (event) => updateItineraryDialogDate(event.target.value));
 
     $("#personForm")?.addEventListener("submit", (event) => {
       event.preventDefault();

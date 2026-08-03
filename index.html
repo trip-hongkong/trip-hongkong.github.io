@@ -31,10 +31,10 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css?v=20260801-7">
-  <link rel="stylesheet" href="poster.css?v=20260803-33">
+  <link rel="stylesheet" href="poster.css?v=20260803-34">
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.111.0/dist/umd/supabase.min.js"></script>
   <script defer src="cloud-sync.js?v=20260801-25"></script>
-  <script defer src="app.js?v=20260803-30"></script>
+  <script defer src="app.js?v=20260803-31"></script>
 </head>
 <body class="calm-ui" data-page="all">
   <a class="skip-link" href="#main">본문으로 바로가기</a>
@@ -275,7 +275,7 @@
 
   <dialog class="modal" id="itineraryDialog">
     <form id="itineraryForm" class="modal-form">
-      <div class="modal-head"><div><span>일정 추가</span><h2 id="itineraryDialogDate">8월 15일</h2></div><button class="modal-close" type="button" data-action="close-itinerary" aria-label="닫기">×</button></div>
+      <div class="modal-head"><div><span id="itineraryDialogMode">일정 추가</span><h2 id="itineraryDialogDate">8월 15일</h2></div><button class="modal-close" type="button" data-action="close-itinerary" aria-label="닫기">×</button></div>
       <div class="form-grid two-cols">
         <label><span>날짜</span><select id="itineraryDate" name="date"><option value="2026-08-15">8월 15일 · 토</option><option value="2026-08-16">8월 16일 · 일</option><option value="2026-08-17">8월 17일 · 월</option><option value="2026-08-18">8월 18일 · 화</option><option value="2026-08-19">8월 19일 · 수</option></select></label>
         <label><span>시간</span><input name="time" type="time"></label>
@@ -283,7 +283,7 @@
         <label class="span-2"><span>장소</span><input id="itineraryPlace" name="place" type="text" maxlength="100" placeholder="지도 검색에 사용됩니다"></label>
         <label class="span-2"><span>메모</span><textarea name="note" rows="3" maxlength="180" placeholder="이동 방법이나 예약 정보를 입력하세요"></textarea></label>
       </div>
-      <div class="modal-actions"><button class="secondary-button" type="button" data-action="close-itinerary">취소</button><button class="primary-button" type="submit">저장</button></div>
+      <div class="modal-actions"><button class="secondary-button" type="button" data-action="close-itinerary">취소</button><button class="primary-button" id="itinerarySubmit" type="submit">저장</button></div>
     </form>
   </dialog>
 
