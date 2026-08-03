@@ -2910,26 +2910,53 @@ html[data-theme="dark"] .calm-ui .current-weather > span {
 
 /* Timeline editing stays visible without competing with the destructive action. */
 .calm-ui .timeline-edit-button {
-  min-width: 48px;
-  min-height: 32px;
-  padding: 0 11px;
+  width: 40px;
+  height: 40px;
+  padding: 0;
   color: var(--accent-strong);
   background: var(--accent-soft);
   border: 0;
   border-radius: 999px;
-  font-size: 10px;
-  font-weight: 750;
+  font-family: Arial, sans-serif;
+  font-size: 20px;
+  font-weight: 500;
   line-height: 1;
   touch-action: manipulation;
 }
 .calm-ui .timeline-edit-button:hover { background: var(--accent-line); }
+.calm-ui .timeline-item { grid-template-columns: 54px 12px minmax(0, 1fr) auto; }
+.calm-ui .timeline-row-actions {
+  display: flex;
+  align-self: start;
+  justify-self: end;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity var(--ease);
+}
+.calm-ui .timeline-item:hover .timeline-row-actions,
+.calm-ui .timeline-row-actions:focus-within { opacity: 1; }
+.calm-ui .timeline-row-actions .delete-button {
+  position: static;
+  width: 40px;
+  height: 40px;
+  opacity: 1;
+}
 html[data-theme="dark"] .calm-ui .timeline-edit-button {
   color: var(--accent-strong);
   background: var(--accent-soft);
 }
 
 @media (max-width: 760px), (hover: none) {
-  .calm-ui .timeline-edit-button { min-height: 44px; }
+  .calm-ui .timeline-row-actions {
+    position: absolute;
+    top: 8px;
+    right: 0;
+    gap: 0;
+    opacity: 1;
+  }
+  .calm-ui .timeline-edit-button,
+  .calm-ui .timeline-row-actions .delete-button { width: 44px; height: 44px; }
+  .calm-ui .timeline-title-row { padding-right: 88px; }
 }
 
 /* Settlement participants: one compact entry point and a mobile-friendly editor. */

@@ -953,13 +953,13 @@
       const marker = createElement("span", "timeline-marker");
       const copy = createElement("div", "timeline-copy");
       const titleRow = createElement("div", "timeline-title-row");
-      const edit = createElement("button", "timeline-edit-button", "수정");
+      const edit = createElement("button", "timeline-edit-button", "✎");
       edit.type = "button";
       edit.dataset.action = "edit-itinerary";
       edit.dataset.id = item.id;
       edit.setAttribute("aria-haspopup", "dialog");
       edit.setAttribute("aria-label", `${item.title} 수정`);
-      titleRow.append(createElement("h3", "", item.title), edit);
+      titleRow.append(createElement("h3", "", item.title));
       copy.append(titleRow);
       if (item.note) copy.append(createElement("p", "", item.note));
       if (item.place) {
@@ -974,7 +974,9 @@
       remove.dataset.action = "delete-itinerary";
       remove.dataset.id = item.id;
       remove.setAttribute("aria-label", `${item.title} 삭제`);
-      row.append(time, marker, copy, remove);
+      const actions = createElement("div", "timeline-row-actions");
+      actions.append(edit, remove);
+      row.append(time, marker, copy, actions);
       timeline.append(row);
     });
   }
