@@ -31,10 +31,10 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css?v=20260801-7">
-  <link rel="stylesheet" href="poster.css?v=20260802-32">
+  <link rel="stylesheet" href="poster.css?v=20260803-33">
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.111.0/dist/umd/supabase.min.js"></script>
   <script defer src="cloud-sync.js?v=20260801-25"></script>
-  <script defer src="app.js?v=20260802-29"></script>
+  <script defer src="app.js?v=20260803-30"></script>
 </head>
 <body class="calm-ui" data-page="all">
   <a class="skip-link" href="#main">본문으로 바로가기</a>
@@ -139,8 +139,8 @@
               <details class="booking-card stay-booking" name="booking">
                 <summary class="booking-summary"><span><small>홍콩 · 8월 15–18일</small><strong>Royal Plaza Hotel</strong><em>3박 · 1실 · 성인 4명</em></span></summary>
                 <div class="booking-detail">
-                  <p>Plaza Deluxe Family</p>
-                  <div class="booking-facts"><span><small>조식</small><b>불포함</b></span><span><small>요청</small><b>금연 · 트윈베드</b></span><span><small>도착 예정</small><b>12:00–13:00</b></span></div>
+                  <p>Plaza Deluxe Family · 금연 객실, 트윈베드 요청</p>
+                  <div class="booking-facts is-four"><span><small>체크인</small><b>8월 15일 · 15:00</b></span><span><small>체크아웃</small><b>8월 18일 · 11:00</b></span><span><small>조식</small><b>불포함</b></span><span><small>도착 예정</small><b>12:00–13:00</b></span></div>
                   <div class="booking-address"><span>193 Prince Edward Road West, Kowloon, Hong Kong</span><div class="inline-actions"><a href="https://www.google.com/maps/dir/?api=1&destination=Royal%20Plaza%20Hotel%2C%20193%20Prince%20Edward%20Road%20West%2C%20Kowloon%2C%20Hong%20Kong" target="_blank" rel="noopener noreferrer">길찾기 ↗</a><button type="button" data-copy="193 Prince Edward Road West, Kowloon, Hong Kong">주소 복사</button></div></div>
                 </div>
               </details>
@@ -148,7 +148,7 @@
                 <summary class="booking-summary"><span><small>마카오 · 8월 18–19일</small><strong>Broadway Hotel</strong><em>1박 · 2실 · 성인 4명</em></span></summary>
                 <div class="booking-detail">
                   <p>Broadway King</p>
-                  <div class="booking-facts"><span><small>조식</small><b>불포함</b></span><span><small>체크인</small><b>8월 18일</b></span><span><small>체크아웃</small><b>8월 19일</b></span></div>
+                  <div class="booking-facts is-four"><span><small>체크인</small><b>8월 18일 · 15:00</b></span><span><small>체크아웃</small><b>8월 19일 · 11:00</b></span><span><small>조식</small><b>불포함</b></span><span><small>객실</small><b>Broadway King · 2실</b></span></div>
                   <div class="booking-address"><span>Sul da Marina Taipa-Sul, junto a Rotunda do Dique Oeste, Taipa, Macau</span><div class="inline-actions"><a href="https://www.google.com/maps/dir/?api=1&destination=Broadway%20Hotel%2C%20Macau" target="_blank" rel="noopener noreferrer">길찾기 ↗</a><button type="button" data-copy="Sul da Marina Taipa-Sul, junto a Rotunda do Dique Oeste, Taipa, Macau">주소 복사</button></div></div>
                 </div>
               </details>
@@ -211,7 +211,7 @@
               <div class="hotel-topline card-title-row"><span id="activeStayLabel">STAY · HONG KONG</span><span id="activeStayStatus">3박</span></div>
               <h3 id="activeStayName">Royal Plaza Hotel</h3>
               <p id="activeStayAddress">193 Prince Edward Road West,<br>Kowloon, Hong Kong</p>
-              <div class="hotel-facts"><span><small>STAY</small><b id="activeStayDates">15–18 AUG</b></span><span><small>ROOM</small><b id="activeStayRoom">Family · 1실</b></span></div>
+              <div class="hotel-facts is-four"><span><small>STAY</small><b id="activeStayDates">15–18 AUG</b></span><span><small>ROOM</small><b id="activeStayRoom">Family · 1실</b></span><span><small>CHECK-IN</small><b id="activeStayCheckIn">15 AUG · 15:00</b></span><span><small>CHECK-OUT</small><b id="activeStayCheckOut">18 AUG · 11:00</b></span></div>
               <div class="hotel-actions button-row"><a class="primary-button" id="activeStayMap" href="https://www.google.com/maps/dir/?api=1&destination=Royal%20Plaza%20Hotel%2C%20193%20Prince%20Edward%20Road%20West%2C%20Kowloon%2C%20Hong%20Kong" target="_blank" rel="noopener noreferrer">길찾기 ↗</a><button class="secondary-button" id="activeStayCopy" type="button" data-copy="193 Prince Edward Road West, Kowloon, Hong Kong">주소 복사</button></div>
             </article>
 

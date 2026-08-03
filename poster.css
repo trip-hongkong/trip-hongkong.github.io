@@ -539,6 +539,11 @@ textarea:focus { border-color: var(--jade); box-shadow: 0 0 0 3px rgba(23,105,87
 .hotel-facts { display: grid; grid-template-columns: 1fr 1fr; margin-bottom: 18px; padding-block: 14px; border-block: 1px solid rgba(255,255,255,.17); }
 .hotel-facts span { display: grid; }
 .hotel-facts span + span { padding-left: 16px; border-left: 1px solid rgba(255,255,255,.17); }
+.hotel-facts.is-four { padding-block: 0; }
+.hotel-facts.is-four span { min-width: 0; padding-block: 14px; }
+.hotel-facts.is-four span:nth-child(3),
+.hotel-facts.is-four span:nth-child(4) { border-top: 1px solid rgba(255,255,255,.17); }
+.hotel-facts.is-four span:nth-child(3) { padding-left: 0; border-left: 0; }
 .hotel-facts small { color: rgba(255,255,255,.5); font-size: 8px; font-weight: 800; letter-spacing: .12em; }
 .hotel-facts b { margin-top: 2px; font-size: 12px; }
 .hotel-actions { display: grid; grid-template-columns: 1fr 1fr; }
