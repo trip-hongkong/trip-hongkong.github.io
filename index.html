@@ -31,10 +31,10 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css?v=20260801-7">
-  <link rel="stylesheet" href="poster.css?v=20261011-2">
+  <link rel="stylesheet" href="poster.css?v=20261011-3">
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.111.0/dist/umd/supabase.min.js"></script>
   <script defer src="cloud-sync.js?v=20261011-2"></script>
-  <script defer src="app.js?v=20261011-1"></script>
+  <script defer src="app.js?v=20261011-3"></script>
 </head>
 <body class="calm-ui" data-page="all">
   <a class="skip-link" href="#main">본문으로 바로가기</a>
@@ -159,9 +159,13 @@
             </article>
 
             <article class="card plain-card weather-card weather-panel" id="weather">
-              <div class="card-heading card-title-row"><div><p class="card-label">LIVE FORECAST</p><h3>홍콩 날씨</h3></div><button class="icon-button" type="button" data-action="refresh-weather" aria-label="날씨 새로고침">↻</button></div>
-              <div class="current-weather"><span id="currentWeatherIcon" aria-hidden="true"></span><div><span class="current-weather-kicker">오늘 날씨</span><strong id="currentWeatherText">확인 중</strong><small id="currentWeatherDetail">홍콩 현재 날씨</small></div></div>
-              <div id="weatherDays" class="weather-days" role="group" aria-label="여행 날짜별 날씨"></div>
+              <div class="card-heading card-title-row"><div><p class="card-label">LIVE FORECAST</p><h3 id="weatherLocationName">홍콩 날씨</h3></div><button class="icon-button" type="button" data-action="refresh-weather" aria-label="날씨 새로고침">↻</button></div>
+              <div class="current-weather"><span id="currentWeatherIcon" aria-hidden="true"></span><div><span id="currentWeatherKicker" class="current-weather-kicker">오늘 날씨</span><strong id="currentWeatherText">확인 중</strong><small id="currentWeatherDetail">홍콩 현재 날씨</small></div></div>
+              <div class="weather-controls">
+                <button class="secondary-button weather-city-button" type="button" data-action="open-weather-location">도시 변경</button>
+                <label class="weather-range-label"><span class="visually-hidden">날씨 날짜 범위</span><select id="weatherRange"><option value="trip">여행 기간</option><option value="week">앞으로 7일</option></select></label>
+              </div>
+              <div id="weatherDays" class="weather-days" role="group" aria-label="날짜별 날씨"></div>
               <div class="hourly-weather-heading"><strong id="hourlyWeatherTitle">시간별 예보</strong><span>1시간 단위</span></div>
               <div id="hourlyWeather" class="hourly-weather" aria-label="선택한 날짜의 시간별 날씨" aria-live="polite"></div>
               <p id="weatherUpdated" class="source-note"></p>
@@ -238,6 +242,17 @@
       </section>
     </div>
   </main>
+
+  <dialog class="modal" id="weatherLocationDialog" aria-labelledby="weatherLocationTitle">
+    <form id="weatherLocationForm" class="modal-form">
+      <div class="modal-head"><div><span>WEATHER</span><h2 id="weatherLocationTitle">날씨 도시</h2></div><button class="modal-close" type="button" data-action="close-weather-location" aria-label="닫기">×</button></div>
+      <label><span>도시 이름</span><input name="query" type="search" maxlength="80" minlength="2" required placeholder="예: 서울, 도쿄, Tokyo" autocomplete="off"></label>
+      <button class="primary-button" id="weatherLocationSearch" type="submit">검색</button>
+      <p class="source-note" id="weatherLocationStatus" role="status" aria-live="polite"></p>
+      <div id="weatherLocationResults" class="weather-location-results"></div>
+      <p class="source-note">도시·좌표 정보: <a href="https://www.geonames.org/" target="_blank" rel="noopener noreferrer">GeoNames</a> / Open-Meteo</p>
+    </form>
+  </dialog>
 
   <dialog class="modal" id="tripSettingsDialog">
     <form id="tripSettingsForm" class="modal-form">
