@@ -3104,7 +3104,8 @@ html[data-theme="dark"] .calm-ui .participant-active-field {
 }
 .calm-ui .trip-settings-card h3 { margin: 2px 0 6px; font-size: 21px; }
 .calm-ui .trip-settings-card p:not(.card-label) { margin: 0; color: var(--muted); font-size: 12px; }
-.calm-ui .trip-settings-card .button-row { flex-wrap: wrap; }
+.calm-ui .trip-settings-card .button-row { display: flex; width: auto; flex-shrink: 0; flex-wrap: wrap; }
+.calm-ui .trip-settings-card .button-row button { min-width: 126px; white-space: nowrap; }
 .calm-ui .checklist-owner-switcher {
   grid-template-columns: none;
   grid-auto-flow: column;
