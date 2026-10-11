@@ -1,9 +1,9 @@
 "use strict";
 
 (() => {
-  // A new namespace keeps the previous four-person trip (including receipts) intact.
-  const DATA_PREFIX = "trip2-";
-  const STORAGE_KEY = "trip-hongkong-hub-v3";
+  // A fresh namespace preserves both previous trips and their receipts.
+  const DATA_PREFIX = "trip3-";
+  const STORAGE_KEY = "trip-hongkong-hub-v4";
   const DB_NAME = "trip-hongkong-media-v1";
   const DB_STORE = "receipts";
   const THEME_KEY = "trip-hongkong-theme";
@@ -38,8 +38,8 @@
     { key: "shoes", category: "위탁 수하물", text: "여벌 신발 · 개인용품" },
     { key: "essentials", category: "기내 수하물", text: "여권 · 지갑 · 휴대폰" },
     { key: "documents", category: "기내 수하물", text: "탑승권 · 예약 QR 오프라인 저장" },
-    { key: "charger", category: "기내 수하물", text: "충전기 · BF형 어댑터" },
-    { key: "battery", category: "기내 수하물", text: "보조배터리 최대 2개 · 기내 휴대" },
+    { key: "charger", category: "기내 수하물", text: "충전기 · 여행지 규격 어댑터" },
+    { key: "battery", category: "기내 수하물", text: "보조배터리 규정 확인 · 기내 휴대" },
     { key: "medicine", category: "기내 수하물", text: "상비약 · 개인 약" },
     { key: "liquids", category: "기내 수하물", text: "100ml 이하 액체 · 지퍼백" },
     { key: "rain", category: "기내 수하물", text: "접이식 우산 · 우비" }
@@ -97,20 +97,20 @@
   }
 
   function defaultTrip() {
-    return { name: "Hong Kong", startDate: "", endDate: "", mapUrl: "https://maps.app.goo.gl/c4aqxDU5yhHmMNfu5?g_st=ac", weatherLocation: { ...DEFAULT_WEATHER_LOCATION } };
+    return { name: "My trip", startDate: "", endDate: "", mapUrl: "", weatherLocation: { ...DEFAULT_WEATHER_LOCATION } };
   }
 
   function defaultParticipants() {
     return [
-      { id: DATA_PREFIX + "person-junhyuk", name: "소준혁", active: true, createdAt: "2026-10-11T00:00:00.000Z" },
-      { id: DATA_PREFIX + "person-partner", name: "여자친구", active: true, createdAt: "2026-10-11T00:00:00.000Z" }
+      { id: DATA_PREFIX + "person-1", name: "사람1", active: true, createdAt: "2026-10-11T00:00:00.000Z" },
+      { id: DATA_PREFIX + "person-2", name: "사람2", active: true, createdAt: "2026-10-11T00:00:00.000Z" }
     ];
   }
 
   function defaultState() {
     const participants = defaultParticipants();
     return {
-      schemaVersion: 7,
+      schemaVersion: 8,
       meta: { generation: DATA_PREFIX },
       trip: defaultTrip(),
       stays: [],
@@ -429,7 +429,7 @@
     const ui = input.ui && typeof input.ui === "object" ? input.ui : {};
     const itinerary = sanitizeItinerary(input.itinerary, base.itinerary);
     return {
-      schemaVersion: 7,
+      schemaVersion: 8,
       meta: { generation: DATA_PREFIX },
       trip,
       stays: sanitizeStays(input.stays),

@@ -1,12 +1,12 @@
 "use strict";
 
 (() => {
-  const DATA_PREFIX = "trip2-";
+  const DATA_PREFIX = "trip3-";
   const SETTINGS_ID = DATA_PREFIX + "settings";
   const HOTEL_PREFIX = DATA_PREFIX + "hotel-";
-  const CONTEXT_KEY = "trip-hongkong-cloud-context-v1";
-  const PERSON_KEY = "trip-hongkong-cloud-person-v2";
-  const QUEUE_PREFIX = "trip-hongkong-sync-queue-v2:";
+  const CONTEXT_KEY = "trip-hongkong-cloud-context-v2";
+  const PERSON_KEY = "trip-hongkong-cloud-person-v3";
+  const QUEUE_PREFIX = "trip-hongkong-sync-queue-v3:";
   const RECEIPT_BUCKET = "receipts";
   const SHARED_TABLES = ["participants", "checklist", "itinerary", "expenses"];
   const DB_TABLES = {
@@ -59,7 +59,8 @@
     const url = configuredValue(supplied.url || supplied.supabaseUrl || urlMeta);
     const publishableKey = configuredValue(supplied.publishableKey || supplied.anonKey || supplied.key || keyMeta);
     if (!url || !publishableKey || !/^https:\/\//i.test(url)) return null;
-    return { url: url.replace(/\/$/, ""), publishableKey };
+    const tripId = document.querySelector('meta[name="trip-shared-room"]')?.content || "";
+    return { url: url.replace(/\/$/, ""), publishableKey, tripId };
   }
 
   function formatError(error) {
@@ -120,6 +121,7 @@
     restoreOfflineContext() {
       const remembered = safeParse(safeGet(CONTEXT_KEY), {});
       const tripId = cleanText(remembered.tripId, 80);
+      if (this.config?.tripId && tripId !== this.config.tripId) return false;
       if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(tripId)) return false;
       this.tripId = tripId;
       this.role = ["owner", "editor", "viewer"].includes(remembered.role) ? remembered.role : "editor";
@@ -287,6 +289,7 @@
         if (error) throw error;
         const membership = Array.isArray(data) ? data[0] : data;
         if (!membership?.trip_id) throw new Error("여행방을 찾지 못했습니다.");
+        if (this.config.tripId && membership.trip_id !== this.config.tripId) throw new Error("이전 여행의 코드입니다. 새 초대 코드를 입력해 주세요.");
         safeSet(PERSON_KEY, personName);
         const invite = document.querySelector("#cloudInviteCode");
         if (invite) invite.value = "";
@@ -310,6 +313,7 @@
         .from("trip_members")
         .select("trip_id, role, joined_at")
         .eq("user_id", this.userId)
+        .eq("trip_id", this.config.tripId)
         .order("joined_at", { ascending: false });
       const { data, error } = await query;
       if (error) throw error;

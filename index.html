@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#f5f5f7">
   <meta name="trip-supabase-url" content="https://ofnhnlqqqvbywiwgpelq.supabase.co">
+  <meta name="trip-shared-room" content="71f92c77-5d78-4201-bf43-e3e1d5264f73">
   <meta name="trip-supabase-key" content="sb_publishable_ZIFMvGM2xXmZjEP3ms2FIw_8CeJhrma">
   <script>
     (() => {
@@ -33,8 +34,8 @@
   <link rel="stylesheet" href="styles.css?v=20260801-7">
   <link rel="stylesheet" href="poster.css?v=20261011-5">
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.111.0/dist/umd/supabase.min.js"></script>
-  <script defer src="cloud-sync.js?v=20261011-2"></script>
-  <script defer src="app.js?v=20261011-5"></script>
+  <script defer src="cloud-sync.js?v=20261011-6"></script>
+  <script defer src="app.js?v=20261011-6"></script>
 </head>
 <body class="calm-ui" data-page="all">
   <a class="skip-link" href="#main">본문으로 바로가기</a>
@@ -51,7 +52,7 @@
       </a>
       <div class="topbar-actions">
         <button class="glass-button theme-toggle" type="button" data-action="toggle-theme" aria-label="다크 모드로 전환"><span class="theme-toggle-icon" aria-hidden="true">◐</span><span class="theme-toggle-label">테마</span></button>
-        <a class="glass-button" data-shared-map href="https://maps.app.goo.gl/c4aqxDU5yhHmMNfu5?g_st=ac" target="_blank" rel="noopener noreferrer">공유 지도 ↗</a>
+        <a class="glass-button" data-shared-map href="#" hidden target="_blank" rel="noopener noreferrer">공유 지도 ↗</a>
         <button class="glass-button cloud-status-button" id="cloudStatusButton" type="button" data-status="connecting" aria-label="공용 저장 상태 확인"><i aria-hidden="true"></i><span id="cloudStatusLabel">연결 중</span></button>
         <button class="glass-button" type="button" data-action="export">백업</button>
       </div>
@@ -59,17 +60,17 @@
 
     <div class="hero-content shell">
       <div class="hero-copy">
-        <p class="eyebrow" id="heroEyebrow">HONG KONG</p>
-        <h1><span id="heroTripName">Hong Kong,</span><br><em>here we go.</em></h1>
+        <p class="eyebrow" id="heroEyebrow">MY TRIP</p>
+        <h1><span id="heroTripName">My trip,</span><br><em>here we go.</em></h1>
         <div class="hero-meta" aria-label="여행 정보">
           <span id="heroDuration">날짜 미정</span>
-          <span id="heroPeople">2명 · 소준혁 · 여자친구</span>
+          <span id="heroPeople">2명 · 사람1 · 사람2</span>
         </div>
       </div>
 
       <aside class="boarding-card" aria-label="여행 카운트다운">
         <div class="boarding-card-top"><span>TRIP PASS</span><span id="boardingDuration">DATES TBD</span></div>
-        <div class="boarding-route" aria-hidden="true"><span>ICN</span><i></i><b>✦</b><i></i><span>HKG</span></div>
+        <div class="boarding-route" aria-hidden="true"><span>PLAN</span><i></i><b>✦</b><i></i><span>TRIP</span></div>
         <span class="countdown-label" id="tripStatusLabel">여행 전</span>
         <strong class="countdown" id="tripCountdown">TBD</strong>
         <div class="boarding-card-bottom"><small id="tripStatusDate">날짜를 설정해 주세요</small><span class="live-dot">LIVE</span></div>
@@ -103,8 +104,8 @@
 
         <div class="before-grid">
           <article class="card plain-card trip-settings-card">
-            <div><p class="card-label">TRIP SETTINGS</p><h3 id="tripSettingsName">Hong Kong</h3><p id="tripSettingsSummary">여행 날짜 미정 · 2명</p></div>
-            <div class="button-row"><button class="secondary-button" type="button" data-action="open-trip-settings">날짜·여행 설정</button><button class="secondary-button" type="button" data-action="open-participants">참가자 관리</button></div>
+            <div><p class="card-label">TRIP SETTINGS</p><h3 id="tripSettingsName">My trip</h3><p id="tripSettingsSummary">여행 날짜 미정 · 2명</p></div>
+            <div class="button-row"><button class="secondary-button" type="button" data-action="open-trip-settings">여행 정보 입력</button><button class="secondary-button" type="button" data-action="open-participants">이름·인원 입력</button></div>
           </article>
           <article class="card plain-card checklist-card checklist-panel">
             <div class="card-heading card-title-row checklist-heading">
@@ -128,7 +129,7 @@
             <div id="stayList" class="booking-grid"><p class="empty-state">등록된 숙소가 없습니다.</p></div>
           </article>
 
-          <a class="card plain-card places-card disclosure-panel map-launch-card" data-shared-map href="https://maps.app.goo.gl/c4aqxDU5yhHmMNfu5?g_st=ac" target="_blank" rel="noopener noreferrer" aria-label="저장 장소 지도 열기">
+          <a class="card plain-card places-card disclosure-panel map-launch-card" data-shared-map href="#" hidden target="_blank" rel="noopener noreferrer" aria-label="저장 장소 지도 열기">
             <span class="disclosure-summary"><span><small>공유 지도</small><strong>저장 장소 둘러보기</strong></span><b>지도 열기 ↗</b></span>
           </a>
         </div>
@@ -174,7 +175,7 @@
 
           <aside class="during-side side-column">
             <article class="card map-card">
-              <div class="map-copy"><p class="card-label">OUR GOOGLE MAP</p><h3>공유 지도</h3><p>등록한 공유 지도를 열어보세요</p><a class="button dark-button" data-shared-map href="https://maps.app.goo.gl/c4aqxDU5yhHmMNfu5?g_st=ac" target="_blank" rel="noopener noreferrer">Google 지도에서 열기 ↗</a></div>
+              <div class="map-copy"><p class="card-label">OUR GOOGLE MAP</p><h3>공유 지도</h3><p>등록한 공유 지도를 열어보세요</p><a class="button dark-button" data-shared-map href="#" hidden target="_blank" rel="noopener noreferrer">Google 지도에서 열기 ↗</a></div>
             </article>
 
             <article class="card plain-card hotel-card hotel-panel" id="activeStayCard" hidden>
@@ -258,7 +259,7 @@
     <form id="tripSettingsForm" class="modal-form">
       <div class="modal-head"><div><span>TRIP SETTINGS</span><h2>여행 설정</h2></div><button class="modal-close" type="button" data-action="close-trip-settings" aria-label="닫기">×</button></div>
       <div class="form-grid two-cols">
-        <label class="span-2"><span>여행 이름</span><input name="name" type="text" maxlength="60" required placeholder="예: Hong Kong"></label>
+        <label class="span-2"><span>여행 이름</span><input name="name" type="text" maxlength="60" required placeholder="예: 도쿄 여행"></label>
         <label><span>출발일</span><input name="startDate" type="date"></label>
         <label><span>마지막 날</span><input name="endDate" type="date"></label>
         <label class="span-2"><span>공유 지도 링크 <small>선택</small></span><input name="mapUrl" type="url" maxlength="600" placeholder="Google 지도 등의 링크"></label>
@@ -340,7 +341,7 @@
       <p id="cloudJoinMessage">초대 코드로 연결하면 참가자 모두가 같은 체크리스트, 일정과 정산을 봅니다.</p>
       <form id="cloudJoinForm" class="cloud-join-form">
         <label><span>내 이름</span><select id="cloudPersonName" name="person" required><option value="">선택</option></select></label>
-        <label><span>초대 코드</span><input id="cloudInviteCode" name="invite" type="password" minlength="24" maxlength="160" autocomplete="off" autocapitalize="off" spellcheck="false" required placeholder="HK26-…"></label>
+        <label><span>초대 코드</span><input id="cloudInviteCode" name="invite" type="password" minlength="24" maxlength="160" autocomplete="off" autocapitalize="off" spellcheck="false" required placeholder="TRIP-…"></label>
         <button class="primary-button" id="cloudJoinSubmit" type="submit">공용 여행에 연결</button>
       </form>
       <small>한 번 연결하면 이 기기에서는 다시 입력하지 않아도 됩니다.</small>
@@ -355,8 +356,8 @@
 
   <footer class="footer">
     <div class="shell footer-inner">
-      <div><strong id="footerTripName">Hong Kong</strong><p id="footerTripDates">여행 날짜 미정</p></div>
-      <div class="footer-links"><a data-shared-map href="https://maps.app.goo.gl/c4aqxDU5yhHmMNfu5?g_st=ac" target="_blank" rel="noopener noreferrer">공유 지도</a><a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">날씨</a><a href="https://frankfurter.dev/" target="_blank" rel="noopener noreferrer">환율</a></div>
+      <div><strong id="footerTripName">My trip</strong><p id="footerTripDates">여행 날짜 미정</p></div>
+      <div class="footer-links"><a data-shared-map href="#" hidden target="_blank" rel="noopener noreferrer">공유 지도</a><a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">날씨</a><a href="https://frankfurter.dev/" target="_blank" rel="noopener noreferrer">환율</a></div>
       <p class="photo-credit">Photo: <a href="https://commons.wikimedia.org/wiki/File:Hong_Kong_Harbour_Night_2019-06-11.jpg" target="_blank" rel="noopener noreferrer">Benh LIEU SONG / Wikimedia Commons</a>, CC BY-SA 4.0.</p>
     </div>
   </footer>
