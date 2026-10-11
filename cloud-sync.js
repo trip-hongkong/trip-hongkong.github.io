@@ -1,9 +1,12 @@
 "use strict";
 
 (() => {
+  const DATA_PREFIX = "trip2-";
+  const SETTINGS_ID = DATA_PREFIX + "settings";
+  const HOTEL_PREFIX = DATA_PREFIX + "hotel-";
   const CONTEXT_KEY = "trip-hongkong-cloud-context-v1";
-  const PERSON_KEY = "trip-hongkong-cloud-person-v1";
-  const QUEUE_PREFIX = "trip-hongkong-sync-queue-v1:";
+  const PERSON_KEY = "trip-hongkong-cloud-person-v2";
+  const QUEUE_PREFIX = "trip-hongkong-sync-queue-v2:";
   const RECEIPT_BUCKET = "receipts";
   const SHARED_TABLES = ["participants", "checklist", "itinerary", "expenses"];
   const DB_TABLES = {
@@ -12,15 +15,6 @@
     itinerary: "itinerary_items",
     expenses: "expenses"
   };
-  const OWNER_TO_PARTICIPANT = {
-    minje: "person-me",
-    junho: "person-companion",
-    juyoung: "person-companion-2",
-    junhyuk: "person-companion-3"
-  };
-  const PARTICIPANT_TO_OWNER = Object.fromEntries(
-    Object.entries(OWNER_TO_PARTICIPANT).map(([ownerId, participantId]) => [participantId, ownerId])
-  );
   const STATUS_COPY = {
     local: ["로컬", "이 기기에 저장 중"],
     connecting: ["연결 중", "공용 여행방을 확인하는 중"],
@@ -72,7 +66,7 @@
     const message = cleanText(error?.message, 240);
     if (!message) return "공용 저장에 연결하지 못했습니다.";
     if (/invite|초대|P0001/i.test(`${error?.code || ""} ${message}`)) return "초대 코드를 확인해 주세요.";
-    if (/Failed to fetch|NetworkError|network|offline/i.test(message)) return "인터넷 연결을 확인해 주세요.";
+    if (/Failed to fetch|NetworkError|network|offline/i.test(message)) return "공용 서버 연결 실패 · 이 기기에 저장 중";
     return message;
   }
 
@@ -220,7 +214,7 @@
       const dataCopy = document.querySelector("#cloudDataCopy");
       if (dataCopy) {
         dataCopy.textContent = status === "synced" || status === "syncing"
-          ? "체크리스트·일정·정산과 영수증을 참가자 모두가 함께 봅니다."
+          ? "여행 설정·숙소·체크리스트·일정·정산을 참가자 모두가 함께 봅니다."
           : status === "offline"
             ? "인터넷이 연결되면 이 기기의 변경 내용을 자동으로 합칩니다."
             : "여행방을 연결하면 참가자 모두가 같은 내용을 볼 수 있습니다.";
@@ -379,7 +373,7 @@
     }
 
     async bootstrapFromLocal() {
-      const shared = copy(this.options.getSharedState?.() || {});
+      const shared = this.encodeShared(copy(this.options.getSharedState?.() || {}));
       this.setStatus("syncing", "이 기기의 기록을 공용으로 옮기는 중");
       const remote = await this.fetchRaw();
       this.updateMaps(remote);
@@ -481,6 +475,7 @@
 
     queueReplace(shared) {
       if (!this.tripId || !shared) return;
+      shared = this.encodeShared(shared);
       const previous = this.lastShared || {};
       let queuedChange = false;
       SHARED_TABLES.forEach((table) => {
@@ -616,13 +611,14 @@
         return {
           trip_id: this.tripId,
           client_id: item.id,
-          name: cleanText(item.name, 40),
+          // Names are unique per room, including archived generations.
+          name: DATA_PREFIX + cleanText(item.name, 30),
           is_active: item.active !== false,
           sort_order: position
         };
       }
       if (table === "checklist") {
-        const participantLocalId = OWNER_TO_PARTICIPANT[item.ownerId];
+        const participantLocalId = item.ownerId !== "common" ? item.ownerId : null;
         const ownerId = participantLocalId ? await this.ensureRemoteParticipant(participantLocalId) : null;
         return {
           trip_id: this.tripId,
@@ -871,10 +867,10 @@
 
     async fetchRaw() {
       const requests = [
-        this.client.from("participants").select("*").eq("trip_id", this.tripId).order("sort_order").order("created_at"),
-        this.client.from("checklist_items").select("*").eq("trip_id", this.tripId).order("sort_order").order("created_at"),
-        this.client.from("itinerary_items").select("*").eq("trip_id", this.tripId).order("item_date").order("item_time").order("sort_order"),
-        this.client.from("expenses").select("*").eq("trip_id", this.tripId).order("expense_date", { ascending: false }).order("created_at", { ascending: false }),
+        this.client.from("participants").select("*").eq("trip_id", this.tripId).like("client_id", DATA_PREFIX + "%").order("sort_order").order("created_at"),
+        this.client.from("checklist_items").select("*").eq("trip_id", this.tripId).like("client_id", DATA_PREFIX + "%").order("sort_order").order("created_at"),
+        this.client.from("itinerary_items").select("*").eq("trip_id", this.tripId).like("client_id", DATA_PREFIX + "%").order("item_date").order("item_time").order("sort_order"),
+        this.client.from("expenses").select("*").eq("trip_id", this.tripId).like("client_id", DATA_PREFIX + "%").order("expense_date", { ascending: false }).order("created_at", { ascending: false }),
         this.client.from("receipt_files").select("*").eq("trip_id", this.tripId).order("created_at", { ascending: false })
       ];
       const results = await Promise.all(requests);
@@ -910,10 +906,25 @@
       });
     }
 
+    // Configuration uses reserved itinerary records so the existing secured
+    // database and membership permissions can be reused without schema changes.
+    encodeShared(shared) {
+      const itinerary = (shared.itinerary || []).filter((item) => item.id !== SETTINGS_ID && !item.id.startsWith(HOTEL_PREFIX));
+      itinerary.push({
+        id: SETTINGS_ID, date: "1970-01-01", time: "", status: "custom",
+        title: "여행 설정", place: "", note: JSON.stringify(shared.trip || {})
+      });
+      (shared.stays || []).forEach((stay) => itinerary.push({
+        id: stay.id, date: stay.checkInDate || "1970-01-01", time: "", status: "custom",
+        title: "숙소 설정", place: "", note: JSON.stringify(stay)
+      }));
+      return { participants: shared.participants || [], checklist: shared.checklist || [], itinerary, expenses: shared.expenses || [] };
+    }
+
     toShared(raw) {
       const participants = raw.participants.map((row) => ({
         id: row.client_id || `cloud-${row.id}`,
-        name: row.name,
+        name: row.name?.startsWith(DATA_PREFIX) ? row.name.slice(DATA_PREFIX.length) : row.name,
         active: row.is_active !== false,
         createdAt: row.created_at
       }));
@@ -923,7 +934,7 @@
           : "";
         return {
           id: row.client_id || `cloud-${row.id}`,
-          ownerId: participantLocalId ? (PARTICIPANT_TO_OWNER[participantLocalId] || "common") : "common",
+          ownerId: participantLocalId ? participantLocalId : "common",
           category: row.category,
           text: row.text,
           url: row.url || "",
@@ -931,7 +942,10 @@
           done: row.is_done === true
         };
       });
-      const itinerary = raw.itinerary.map((row) => ({
+      const config = raw.itinerary.find((row) => row.client_id === SETTINGS_ID);
+      const trip = config ? safeParse(config.note, null) : null;
+      const stays = raw.itinerary.filter((row) => row.client_id?.startsWith(HOTEL_PREFIX)).map((row) => ({ ...safeParse(row.note, {}), id: row.client_id })).filter((stay) => stay.name);
+      const itinerary = raw.itinerary.filter((row) => row.client_id !== SETTINGS_ID && !row.client_id?.startsWith(HOTEL_PREFIX)).map((row) => ({
         id: row.client_id || `cloud-${row.id}`,
         date: row.item_date,
         time: row.item_time ? String(row.item_time).slice(0, 5) : "",
@@ -963,7 +977,7 @@
           createdAt: row.created_at
         };
       });
-      return { participants, checklist, itinerary, expenses };
+      return { trip, stays, participants, checklist, itinerary, expenses };
     }
 
     overlayQueue(shared) {
@@ -998,8 +1012,37 @@
       try {
         const raw = await this.fetchRaw();
         this.updateMaps(raw);
-        const shared = this.overlayQueue(this.toShared(raw));
-        this.lastShared = copy(shared);
+        const remote = this.toShared(raw);
+        const hasSettings = raw.itinerary.some((row) => row.client_id === SETTINGS_ID);
+        if (!hasSettings) {
+          // Start this generation without deleting any rows from the old trip.
+          const local = copy(this.options.getSharedState?.() || {});
+          SHARED_TABLES.filter((table) => table !== "itinerary").forEach((table) => {
+            const items = new Map((local[table] || []).map((item) => [item.id, item]));
+            (remote[table] || []).forEach((item) => items.set(item.id, item));
+            local[table] = [...items.values()];
+          });
+          const plans = new Map((local.itinerary || []).map((item) => [item.id, item]));
+          remote.itinerary.forEach((item) => plans.set(item.id, item));
+          local.itinerary = [...plans.values()];
+          const hotels = new Map((local.stays || []).map((item) => [item.id, item]));
+          remote.stays.forEach((item) => hotels.set(item.id, item));
+          local.stays = [...hotels.values()];
+          this.lastShared = this.encodeShared(remote);
+          // The missing settings record must be included in the first write.
+          this.lastShared.itinerary = this.lastShared.itinerary.filter((item) => item.id !== SETTINGS_ID);
+          this.queueReplace(local);
+        }
+        const pending = this.overlayQueue(this.encodeShared(remote));
+        // Decode queued metadata in the same way as fetched metadata.
+        const settings = pending.itinerary.find((item) => item.id === SETTINGS_ID);
+        const shared = {
+          ...pending,
+          trip: settings ? safeParse(settings.note, remote.trip) : remote.trip,
+          stays: pending.itinerary.filter((item) => item.id.startsWith(HOTEL_PREFIX)).map((item) => ({ ...safeParse(item.note, {}), id: item.id })),
+          itinerary: pending.itinerary.filter((item) => item.id !== SETTINGS_ID && !item.id.startsWith(HOTEL_PREFIX))
+        };
+        this.lastShared = this.encodeShared(shared);
         this.applyRemote = true;
         await this.options.applySharedState?.(shared);
         this.applyRemote = false;

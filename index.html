@@ -19,22 +19,22 @@
       document.querySelector('meta[name="theme-color"]').content = isDark ? "#000000" : "#f5f5f7";
     })();
   </script>
-  <meta name="description" content="2026년 8월 홍콩 여행 준비, 일정, 날씨, 지도와 정산을 한 페이지에서 확인하는 여행 페이지">
+  <meta name="description" content="여행 날짜, 숙소, 참가자를 직접 설정하고 준비, 일정, 정산을 함께 관리하는 여행 페이지">
   <meta property="og:type" content="website">
-  <meta property="og:title" content="Hong Kong 2026">
-  <meta property="og:description" content="8월 15–19일 · 준비, 일정, 정산">
+  <meta property="og:title" content="HK Trip">
+  <meta property="og:description" content="여행 준비 · 일정 · 정산">
   <meta property="og:url" content="https://trip-hongkong.github.io/">
   <meta property="og:image" content="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/Hong_Kong_Harbour_Night_2019-06-11.jpg/1280px-Hong_Kong_Harbour_Night_2019-06-11.jpg">
   <meta name="twitter:card" content="summary_large_image">
-  <title>Hong Kong 2026</title>
+  <title>HK Trip</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css?v=20260801-7">
-  <link rel="stylesheet" href="poster.css?v=20260803-35">
+  <link rel="stylesheet" href="poster.css?v=20261011-1">
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.111.0/dist/umd/supabase.min.js"></script>
-  <script defer src="cloud-sync.js?v=20260801-25"></script>
-  <script defer src="app.js?v=20260803-32"></script>
+  <script defer src="cloud-sync.js?v=20261011-1"></script>
+  <script defer src="app.js?v=20261011-1"></script>
 </head>
 <body class="calm-ui" data-page="all">
   <a class="skip-link" href="#main">본문으로 바로가기</a>
@@ -45,13 +45,13 @@
     <div class="hero-noise" aria-hidden="true"></div>
 
     <nav class="topbar shell" aria-label="사이트 도구">
-      <a class="wordmark" href="#top" aria-label="Hong Kong 2026 홈">
+      <a class="wordmark" href="#top" aria-label="여행 홈">
         <span class="wordmark-mark">HK</span>
         <span>TRIP ARCHIVE</span>
       </a>
       <div class="topbar-actions">
         <button class="glass-button theme-toggle" type="button" data-action="toggle-theme" aria-label="다크 모드로 전환"><span class="theme-toggle-icon" aria-hidden="true">◐</span><span class="theme-toggle-label">테마</span></button>
-        <a class="glass-button" href="https://maps.app.goo.gl/c4aqxDU5yhHmMNfu5?g_st=ac" target="_blank" rel="noopener noreferrer">공유 지도 ↗</a>
+        <a class="glass-button" data-shared-map href="https://maps.app.goo.gl/c4aqxDU5yhHmMNfu5?g_st=ac" target="_blank" rel="noopener noreferrer">공유 지도 ↗</a>
         <button class="glass-button cloud-status-button" id="cloudStatusButton" type="button" data-status="connecting" aria-label="공용 저장 상태 확인"><i aria-hidden="true"></i><span id="cloudStatusLabel">연결 중</span></button>
         <button class="glass-button" type="button" data-action="export">백업</button>
       </div>
@@ -59,20 +59,20 @@
 
     <div class="hero-content shell">
       <div class="hero-copy">
-        <p class="eyebrow">HONG KONG · 2026</p>
-        <h1>Hong Kong,<br><em>here we go.</em></h1>
+        <p class="eyebrow" id="heroEyebrow">HONG KONG</p>
+        <h1><span id="heroTripName">Hong Kong,</span><br><em>here we go.</em></h1>
         <div class="hero-meta" aria-label="여행 정보">
-          <span>4박 5일</span>
-          <span>SEOUL ↔ HONG KONG · MACAU</span>
+          <span id="heroDuration">날짜 미정</span>
+          <span id="heroPeople">2명 · 소준혁 · 여자친구</span>
         </div>
       </div>
 
       <aside class="boarding-card" aria-label="여행 카운트다운">
-        <div class="boarding-card-top"><span>TRIP PASS</span><span>HKG · 05 DAYS</span></div>
+        <div class="boarding-card-top"><span>TRIP PASS</span><span id="boardingDuration">DATES TBD</span></div>
         <div class="boarding-route" aria-hidden="true"><span>ICN</span><i></i><b>✦</b><i></i><span>HKG</span></div>
         <span class="countdown-label" id="tripStatusLabel">여행 전</span>
-        <strong class="countdown" id="tripCountdown">D–14</strong>
-        <div class="boarding-card-bottom"><small id="tripStatusDate">2026. 08. 15 출발</small><span class="live-dot">LIVE</span></div>
+        <strong class="countdown" id="tripCountdown">TBD</strong>
+        <div class="boarding-card-bottom"><small id="tripStatusDate">날짜를 설정해 주세요</small><span class="live-dot">LIVE</span></div>
       </aside>
     </div>
 
@@ -102,10 +102,14 @@
         </header>
 
         <div class="before-grid">
+          <article class="card plain-card trip-settings-card">
+            <div><p class="card-label">TRIP SETTINGS</p><h3 id="tripSettingsName">Hong Kong</h3><p id="tripSettingsSummary">여행 날짜 미정 · 2명</p></div>
+            <div class="button-row"><button class="secondary-button" type="button" data-action="open-trip-settings">날짜·여행 설정</button><button class="secondary-button" type="button" data-action="open-participants">참가자 관리</button></div>
+          </article>
           <article class="card plain-card checklist-card checklist-panel">
             <div class="card-heading card-title-row checklist-heading">
-              <div><h3>체크리스트</h3><p id="prepRemaining" aria-live="polite">공통 · 8개 남음</p></div>
-              <strong class="checklist-count" id="prepHeadCount">3 / 11</strong>
+              <div><h3>체크리스트</h3><p id="prepRemaining" aria-live="polite">전체 · 6개 남음</p></div>
+              <strong class="checklist-count" id="prepHeadCount">0 / 6</strong>
             </div>
             <fieldset id="checklistOwnerSwitcher" class="checklist-owner-switcher" aria-describedby="prepRemaining"></fieldset>
             <div class="checklist-progress" role="progressbar" aria-label="여행 준비 진행률" aria-valuemin="0" aria-valuemax="100" aria-valuenow="17"><i id="prepProgressBar"></i></div>
@@ -115,48 +119,17 @@
               <label><span>구분</span><select id="checklistCategory" name="category" aria-label="체크리스트 구분"><option>예약·티켓</option><option>교통·이동</option><option>함께 준비</option></select></label>
               <label class="grow"><span>새 항목</span><input id="checklistText" name="text" type="text" maxlength="80" placeholder="예: 피크트램 예매" autocomplete="off" required></label>
               <label class="checklist-link-field"><span>링크 <small>선택</small></span><input id="checklistUrl" name="url" type="url" inputmode="url" maxlength="600" placeholder="https://..." autocomplete="url"></label>
-              <button class="primary-button" id="checklistSubmit" type="submit">공통에 추가</button>
+              <button class="primary-button" id="checklistSubmit" type="submit">전체에 추가</button>
             </form>
           </article>
 
           <article class="card plain-card reservations-card reservation-panel">
-            <div class="card-heading card-title-row"><div><h3>예약 정보</h3></div><span class="muted-badge">4건 확정</span></div>
-            <div class="booking-grid">
-              <details class="booking-card flight-booking" name="booking">
-                <summary class="booking-summary"><span><small>가는 편 · 8월 15일</small><strong>CX413 · ICN → HKG</strong><em>08:00 — 10:50</em></span></summary>
-                <div class="booking-detail">
-                  <div class="flight-route"><div><small>ICN · T1</small><strong>08:00</strong><span>서울</span></div><i><span>CX413</span>→</i><div><small>HKG · T1</small><strong>10:50</strong><span>홍콩</span></div></div>
-                  <div class="booking-facts is-four"><span><small>비행시간</small><b>3시간 50분</b></span><span><small>좌석</small><b>이코노미</b></span><span><small>운임</small><b>Economy Light</b></span><span><small>수하물</small><b>위탁 1개</b></span></div>
-                </div>
-              </details>
-              <details class="booking-card flight-booking" name="booking">
-                <summary class="booking-summary"><span><small>오는 편 · 8월 19일</small><strong>CX430 · HKG → ICN</strong><em>17:40 — 22:25</em></span></summary>
-                <div class="booking-detail">
-                  <div class="flight-route"><div><small>HKG · T1</small><strong>17:40</strong><span>홍콩</span></div><i><span>CX430</span>→</i><div><small>ICN · T1</small><strong>22:25</strong><span>서울</span></div></div>
-                  <div class="booking-facts is-four"><span><small>비행시간</small><b>3시간 45분</b></span><span><small>좌석</small><b>이코노미</b></span><span><small>운임</small><b>Economy Light</b></span><span><small>수하물</small><b>위탁 1개</b></span></div>
-                </div>
-              </details>
-              <details class="booking-card stay-booking" name="booking">
-                <summary class="booking-summary"><span><small>홍콩 · 8월 15–18일</small><strong>Royal Plaza Hotel</strong><em>3박 · 1실 · 성인 4명</em></span></summary>
-                <div class="booking-detail">
-                  <p>Plaza Deluxe Family · 금연 객실, 트윈베드 요청</p>
-                  <div class="booking-facts is-four"><span><small>체크인</small><b>8월 15일 · 15:00</b></span><span><small>체크아웃</small><b>8월 18일 · 11:00</b></span><span><small>조식</small><b>불포함</b></span><span><small>도착 예정</small><b>12:00–13:00</b></span></div>
-                  <div class="booking-address"><span>193 Prince Edward Road West, Kowloon, Hong Kong</span><div class="inline-actions"><a href="https://www.google.com/maps/dir/?api=1&destination=Royal%20Plaza%20Hotel%2C%20193%20Prince%20Edward%20Road%20West%2C%20Kowloon%2C%20Hong%20Kong" target="_blank" rel="noopener noreferrer">길찾기 ↗</a><button type="button" data-copy="193 Prince Edward Road West, Kowloon, Hong Kong">주소 복사</button></div></div>
-                </div>
-              </details>
-              <details class="booking-card stay-booking" name="booking">
-                <summary class="booking-summary"><span><small>마카오 · 8월 18–19일</small><strong>Broadway Hotel</strong><em>1박 · 2실 · 성인 4명</em></span></summary>
-                <div class="booking-detail">
-                  <p>Broadway King</p>
-                  <div class="booking-facts is-four"><span><small>체크인</small><b>8월 18일 · 15:00</b></span><span><small>체크아웃</small><b>8월 19일 · 11:00</b></span><span><small>조식</small><b>불포함</b></span><span><small>객실</small><b>Broadway King · 2실</b></span></div>
-                  <div class="booking-address"><span>Sul da Marina Taipa-Sul, junto a Rotunda do Dique Oeste, Taipa, Macau</span><div class="inline-actions"><a href="https://www.google.com/maps/dir/?api=1&destination=Broadway%20Hotel%2C%20Macau" target="_blank" rel="noopener noreferrer">길찾기 ↗</a><button type="button" data-copy="Sul da Marina Taipa-Sul, junto a Rotunda do Dique Oeste, Taipa, Macau">주소 복사</button></div></div>
-                </div>
-              </details>
-            </div>
+            <div class="card-heading card-title-row"><div><h3>숙소</h3></div><button class="secondary-button compact" type="button" data-action="open-stay">+ 숙소</button></div>
+            <div id="stayList" class="booking-grid"><p class="empty-state">등록된 숙소가 없습니다.</p></div>
           </article>
 
-          <a class="card plain-card places-card disclosure-panel map-launch-card" href="https://maps.app.goo.gl/c4aqxDU5yhHmMNfu5?g_st=ac" target="_blank" rel="noopener noreferrer" aria-label="공유 지도에서 저장 장소 53곳 둘러보기">
-            <span class="disclosure-summary"><span><small>공유 지도</small><strong>저장 장소 둘러보기</strong></span><b>53곳 · 지도 열기 ↗</b></span>
+          <a class="card plain-card places-card disclosure-panel map-launch-card" data-shared-map href="https://maps.app.goo.gl/c4aqxDU5yhHmMNfu5?g_st=ac" target="_blank" rel="noopener noreferrer" aria-label="저장 장소 지도 열기">
+            <span class="disclosure-summary"><span><small>공유 지도</small><strong>저장 장소 둘러보기</strong></span><b>지도 열기 ↗</b></span>
           </a>
         </div>
       </section>
@@ -164,36 +137,29 @@
       <section class="phase-panel" id="panel-trip" role="tabpanel" aria-labelledby="tab-trip" data-panel="trip" hidden>
         <header class="section-intro compact-intro">
           <div><p class="section-kicker">ITINERARY</p><h2>일정</h2></div>
-          <p>2026. 08. 15—19 · 홍콩 3박 · 마카오 1박</p>
+          <p id="tripDateSummary">여행 날짜 미정</p>
         </header>
-
-        <div class="route-overview" aria-label="여행 동선">
-          <article><time datetime="2026-08-15">15 AUG</time><strong>ICN → HKG</strong><span>CX413 · 08:00—10:50</span></article>
-          <article><time datetime="2026-08-15">15—18 AUG</time><strong>HONG KONG</strong><span>Royal Plaza · 3박</span></article>
-          <article><time datetime="2026-08-18">18—19 AUG</time><strong>MACAU</strong><span>Broadway · 1박</span></article>
-          <article><time datetime="2026-08-19">19 AUG</time><strong>HKG → ICN</strong><span>CX430 · 17:40—22:25</span></article>
-        </div>
 
         <div class="day-switcher-wrap"><div id="daySwitcher" class="day-switcher" role="tablist" aria-label="여행 날짜"></div></div>
 
-        <section class="mobile-next-card" id="mobileNextCard" aria-label="선택한 날의 핵심 일정" aria-live="polite">
-          <div class="mobile-next-time"><small id="mobileNextLabel">NEXT</small><strong id="mobileNextTime">08:00</strong></div>
-          <div class="mobile-next-copy"><h3 id="mobileNextTitle">CX413 인천 출발</h3><p id="mobileNextMeta">인천국제공항 제1터미널</p></div>
-          <a id="mobileNextMap" href="https://www.google.com/maps/search/?api=1&query=Incheon%20International%20Airport%20Terminal%201" target="_blank" rel="noopener noreferrer">지도 ↗</a>
+        <section class="mobile-next-card" id="mobileNextCard" aria-label="선택한 날의 핵심 일정" aria-live="polite" hidden>
+          <div class="mobile-next-time"><small id="mobileNextLabel">NEXT</small><strong id="mobileNextTime"></strong></div>
+          <div class="mobile-next-copy"><h3 id="mobileNextTitle"></h3><p id="mobileNextMeta"></p></div>
+          <a id="mobileNextMap" href="#" target="_blank" rel="noopener noreferrer">지도 ↗</a>
         </section>
 
         <div class="during-grid">
           <section class="during-main main-column">
             <article class="card plain-card itinerary-card itinerary-panel">
               <div class="card-heading card-title-row itinerary-heading">
-                <div><p class="card-label" id="selectedDayEnglish">SATURDAY</p><h3 id="selectedDayTitle">8월 15일 · 토요일</h3></div>
-                <div class="itinerary-actions"><span class="status-pill" id="selectedDayLabel">DAY 1</span><button class="primary-button compact" type="button" data-action="open-itinerary">+ 일정</button></div>
+                <div><p class="card-label" id="selectedDayEnglish">ITINERARY</p><h3 id="selectedDayTitle">여행 날짜 미정</h3></div>
+                <div class="itinerary-actions"><span class="status-pill" id="selectedDayLabel">날짜 미정</span><button class="primary-button compact" type="button" data-action="open-itinerary">+ 일정</button></div>
               </div>
               <div id="timeline" class="timeline" role="tabpanel"></div>
             </article>
 
             <article class="card plain-card weather-card weather-panel" id="weather">
-              <div class="card-heading card-title-row"><div><p class="card-label">LIVE FORECAST</p><h3>날씨</h3></div><button class="icon-button" type="button" data-action="refresh-weather" aria-label="날씨 새로고침">↻</button></div>
+              <div class="card-heading card-title-row"><div><p class="card-label">LIVE FORECAST</p><h3>홍콩 날씨</h3></div><button class="icon-button" type="button" data-action="refresh-weather" aria-label="날씨 새로고침">↻</button></div>
               <div class="current-weather"><span id="currentWeatherIcon" aria-hidden="true"></span><div><span class="current-weather-kicker">오늘 날씨</span><strong id="currentWeatherText">확인 중</strong><small id="currentWeatherDetail">홍콩 현재 날씨</small></div></div>
               <div id="weatherDays" class="weather-days" role="group" aria-label="여행 날짜별 날씨"></div>
               <div class="hourly-weather-heading"><strong id="hourlyWeatherTitle">시간별 예보</strong><span>1시간 단위</span></div>
@@ -204,17 +170,17 @@
 
           <aside class="during-side side-column">
             <article class="card map-card">
-              <div class="map-copy"><p class="card-label">OUR GOOGLE MAP</p><h3>공유 지도</h3><p>홍콩·마카오 숙소와 저장 장소 53곳</p><a class="button dark-button" href="https://maps.app.goo.gl/c4aqxDU5yhHmMNfu5?g_st=ac" target="_blank" rel="noopener noreferrer">Google 지도에서 열기 ↗</a></div>
+              <div class="map-copy"><p class="card-label">OUR GOOGLE MAP</p><h3>공유 지도</h3><p>등록한 공유 지도를 열어보세요</p><a class="button dark-button" data-shared-map href="https://maps.app.goo.gl/c4aqxDU5yhHmMNfu5?g_st=ac" target="_blank" rel="noopener noreferrer">Google 지도에서 열기 ↗</a></div>
             </article>
 
-            <article class="card plain-card hotel-card hotel-panel">
-              <div class="hotel-topline card-title-row"><span id="activeStayLabel">STAY · HONG KONG</span><span id="activeStayStatus">3박</span></div>
-              <h3 id="activeStayName">Royal Plaza Hotel</h3>
-              <p id="activeStayAddress">193 Prince Edward Road West,<br>Kowloon, Hong Kong</p>
-              <div class="hotel-facts is-four"><span><small>STAY</small><b id="activeStayDates">15–18 AUG</b></span><span><small>ROOM</small><b id="activeStayRoom">Family · 1실</b></span><span><small>CHECK-IN</small><b id="activeStayCheckIn">15 AUG · 15:00</b></span><span><small>CHECK-OUT</small><b id="activeStayCheckOut">18 AUG · 11:00</b></span></div>
-              <div class="hotel-actions button-row"><a class="primary-button" id="activeStayMap" href="https://www.google.com/maps/dir/?api=1&destination=Royal%20Plaza%20Hotel%2C%20193%20Prince%20Edward%20Road%20West%2C%20Kowloon%2C%20Hong%20Kong" target="_blank" rel="noopener noreferrer">길찾기 ↗</a><button class="secondary-button" id="activeStayCopy" type="button" data-copy="193 Prince Edward Road West, Kowloon, Hong Kong">주소 복사</button></div>
+            <article class="card plain-card hotel-card hotel-panel" id="activeStayCard" hidden>
+              <div class="hotel-topline card-title-row"><span id="activeStayLabel">STAY</span><span id="activeStayStatus"></span></div>
+              <div class="card-title-row"><h3 id="activeStayName"></h3><button class="icon-button" id="activeStayEdit" type="button" data-action="edit-stay" aria-label="숙소 수정">✎</button></div>
+              <p id="activeStayAddress"></p>
+              <div class="hotel-facts is-four"><span><small>STAY</small><b id="activeStayDates"></b></span><span><small>ROOM</small><b id="activeStayRoom"></b></span><span><small>CHECK-IN</small><b id="activeStayCheckIn"></b></span><span><small>CHECK-OUT</small><b id="activeStayCheckOut"></b></span></div>
+              <div class="hotel-actions button-row"><a class="primary-button" id="activeStayMap" href="#" target="_blank" rel="noopener noreferrer">길찾기 ↗</a><button class="secondary-button" id="activeStayCopy" type="button" data-copy="">주소 복사</button></div>
             </article>
-
+            <article class="card plain-card" id="emptyStayCard"><div class="card-heading card-title-row"><h3>숙소</h3><button class="secondary-button compact" type="button" data-action="open-stay">+ 숙소</button></div><p class="empty-state">숙소를 등록하면 선택한 날짜에 표시됩니다.</p></article>
           </aside>
         </div>
       </section>
@@ -256,13 +222,13 @@
             </article>
 
             <article class="card plain-card people-panel">
-              <div class="card-heading card-title-row participant-card-heading"><h3>참가자</h3><div class="participant-heading-actions"><span class="muted-badge" id="peopleCount">4명</span><button class="participant-edit-button" id="participantEditButton" type="button" data-action="open-participants" aria-haspopup="dialog">수정</button></div></div>
+              <div class="card-heading card-title-row participant-card-heading"><h3>참가자</h3><div class="participant-heading-actions"><span class="muted-badge" id="peopleCount">2명</span><button class="participant-edit-button" id="participantEditButton" type="button" data-action="open-participants" aria-haspopup="dialog">수정</button></div></div>
               <div id="peopleList" class="people-list" role="list"></div>
               <form id="personForm" class="person-form"><label class="visually-hidden" for="personName">참가자 이름</label><input id="personName" name="name" type="text" maxlength="30" placeholder="이름 추가" autocomplete="off" required><button class="secondary-button" type="submit">추가</button></form>
             </article>
 
             <article class="card plain-card data-panel archive-card">
-              <div class="archive-stamp" aria-hidden="true">HK<br><span>2026</span></div>
+              <div class="archive-stamp" aria-hidden="true">HK<br><span>TRIP</span></div>
               <div><p class="card-label">SHARED DATA</p><h3>공용 저장</h3><p id="cloudDataCopy">여행방을 연결하면 참가자 모두가 같은 내용을 볼 수 있습니다.</p><p class="cloud-data-status"><i aria-hidden="true"></i><span id="cloudStatusDetail">공용 여행방을 확인하는 중</span></p>
                 <div class="data-actions"><button class="secondary-button" type="button" data-action="export">전체 백업</button><label class="secondary-button" for="importFile">백업 불러오기</label><input class="visually-hidden" id="importFile" type="file" accept="application/json,.json"><button class="danger-button" type="button" data-action="reset-settlement">정산 초기화</button></div>
               </div>
@@ -273,11 +239,44 @@
     </div>
   </main>
 
+  <dialog class="modal" id="tripSettingsDialog">
+    <form id="tripSettingsForm" class="modal-form">
+      <div class="modal-head"><div><span>TRIP SETTINGS</span><h2>여행 설정</h2></div><button class="modal-close" type="button" data-action="close-trip-settings" aria-label="닫기">×</button></div>
+      <div class="form-grid two-cols">
+        <label class="span-2"><span>여행 이름</span><input name="name" type="text" maxlength="60" required placeholder="예: Hong Kong"></label>
+        <label><span>출발일</span><input name="startDate" type="date"></label>
+        <label><span>마지막 날</span><input name="endDate" type="date"></label>
+        <label class="span-2"><span>공유 지도 링크 <small>선택</small></span><input name="mapUrl" type="url" maxlength="600" placeholder="Google 지도 등의 링크"></label>
+      </div>
+      <p class="source-note">날짜를 비워두면 미정으로 표시됩니다. 날짜를 바꿔도 기존 일정의 날짜는 이동하지 않습니다.</p>
+      <div class="modal-actions"><button class="secondary-button" type="button" data-action="close-trip-settings">취소</button><button class="primary-button" type="submit">저장</button></div>
+    </form>
+  </dialog>
+
+  <dialog class="modal" id="stayDialog">
+    <form id="stayForm" class="modal-form">
+      <div class="modal-head"><div><span>STAY</span><h2 id="stayDialogTitle">숙소 추가</h2></div><button class="modal-close" type="button" data-action="close-stay" aria-label="닫기">×</button></div>
+      <div class="form-grid two-cols">
+        <label class="span-2"><span>숙소 이름</span><input name="name" type="text" maxlength="80" required></label>
+        <label class="span-2"><span>주소 <small>선택</small></span><input name="address" type="text" maxlength="200"></label>
+        <label><span>체크인 날짜</span><input name="checkInDate" type="date"></label>
+        <label><span>체크아웃 날짜</span><input name="checkOutDate" type="date"></label>
+        <label><span>체크인 시간</span><input name="checkInTime" type="time"></label>
+        <label><span>체크아웃 시간</span><input name="checkOutTime" type="time"></label>
+        <label><span>객실 타입</span><input name="room" type="text" maxlength="60" placeholder="선택"></label>
+        <label><span>객실 수</span><input name="rooms" type="number" min="1" max="50" value="1" required></label>
+        <label class="span-2"><span>조식</span><select name="breakfast"><option value="">미입력</option><option value="included">포함</option><option value="excluded">불포함</option></select></label>
+        <label class="span-2"><span>메모 <small>선택</small></span><textarea name="note" rows="2" maxlength="160"></textarea></label>
+      </div>
+      <div class="modal-actions"><button class="secondary-button" type="button" data-action="close-stay">취소</button><button class="primary-button" type="submit">저장</button></div>
+    </form>
+  </dialog>
+
   <dialog class="modal" id="itineraryDialog">
     <form id="itineraryForm" class="modal-form">
-      <div class="modal-head"><div><span id="itineraryDialogMode">일정 추가</span><h2 id="itineraryDialogDate">8월 15일</h2></div><button class="modal-close" type="button" data-action="close-itinerary" aria-label="닫기">×</button></div>
+      <div class="modal-head"><div><span id="itineraryDialogMode">일정 추가</span><h2 id="itineraryDialogDate">날짜 선택</h2></div><button class="modal-close" type="button" data-action="close-itinerary" aria-label="닫기">×</button></div>
       <div class="form-grid two-cols">
-        <label><span>날짜</span><select id="itineraryDate" name="date"><option value="2026-08-15">8월 15일 · 토</option><option value="2026-08-16">8월 16일 · 일</option><option value="2026-08-17">8월 17일 · 월</option><option value="2026-08-18">8월 18일 · 화</option><option value="2026-08-19">8월 19일 · 수</option></select></label>
+        <label><span>날짜</span><input id="itineraryDate" name="date" type="date" required></label>
         <label><span>시간</span><input name="time" type="time"></label>
         <label class="span-2"><span>일정</span><input id="itineraryTitle" name="title" type="text" maxlength="80" placeholder="예: 숙소 체크인" required></label>
         <label class="span-2"><span>장소</span><input id="itineraryPlace" name="place" type="text" maxlength="100" placeholder="지도 검색에 사용됩니다"></label>
@@ -289,9 +288,10 @@
 
   <dialog class="modal participant-modal" id="participantDialog">
     <form id="participantEditForm" class="modal-form">
-      <div class="modal-head"><div><span>정산 설정</span><h2>참가자 수정</h2></div><button class="modal-close" type="button" data-action="close-participants" aria-label="닫기">×</button></div>
-      <p class="participant-edit-copy">이름과 새 지출에 포함할 사람을 바꿀 수 있습니다. 이전 지출과 송금 내역은 그대로 유지됩니다.</p>
+      <div class="modal-head"><div><span>여행 설정</span><h2>참가자 관리</h2></div><button class="modal-close" type="button" data-action="close-participants" aria-label="닫기">×</button></div>
+      <p class="participant-edit-copy">이름과 참가 여부를 바꿀 수 있습니다. 개인 체크리스트도 함께 연결됩니다. 이전 지출은 유지됩니다.</p>
       <div class="participant-edit-list" id="participantEditList"></div>
+      <label class="participant-new-field"><span>새 참가자 <small>선택</small></span><input name="newName" type="text" maxlength="30" placeholder="추가할 이름" autocomplete="off"></label>
       <div class="modal-actions"><button class="secondary-button" type="button" data-action="close-participants">취소</button><button class="primary-button" type="submit">변경 저장</button></div>
     </form>
   </dialog>
@@ -300,7 +300,7 @@
     <form id="expenseForm" class="modal-form">
       <div class="modal-head"><div><span>새 지출</span><h2>누가 얼마를 냈나요?</h2></div><button class="modal-close" type="button" data-action="close-expense" aria-label="닫기">×</button></div>
       <div class="form-grid two-cols">
-        <label><span>날짜</span><input id="expenseDate" name="date" type="date" min="2026-08-15" max="2026-08-19" value="2026-08-15" required></label>
+        <label><span>날짜</span><input id="expenseDate" name="date" type="date" required></label>
         <label><span>구분</span><select name="category"><option value="식비">식비</option><option value="교통">교통</option><option value="숙소">숙소</option><option value="관광">관광</option><option value="쇼핑">쇼핑</option><option value="기타">기타</option></select></label>
         <label class="span-2"><span>항목</span><input id="expenseDescription" name="description" type="text" maxlength="80" placeholder="예: 딤섬 점심" required></label>
         <label><span>금액</span><input name="amount" type="number" inputmode="decimal" min="0.01" max="100000000" step="0.01" placeholder="0" required></label>
@@ -320,7 +320,7 @@
     <div class="cloud-join-card">
       <button class="cloud-join-close" id="cloudJoinClose" type="button" aria-label="나중에 연결">×</button>
       <span class="cloud-join-icon" aria-hidden="true">HK</span>
-      <p class="card-label">HONG KONG 2026</p>
+      <p class="card-label">SHARED TRIP</p>
       <h2 id="cloudJoinTitle">공용 여행에 연결</h2>
       <p id="cloudJoinMessage">초대 코드로 연결하면 참가자 모두가 같은 체크리스트, 일정과 정산을 봅니다.</p>
       <form id="cloudJoinForm" class="cloud-join-form">
@@ -340,8 +340,8 @@
 
   <footer class="footer">
     <div class="shell footer-inner">
-      <div><strong>Hong Kong 2026</strong><p>2026. 08. 15—19 · 4박 5일</p></div>
-      <div class="footer-links"><a href="https://maps.app.goo.gl/c4aqxDU5yhHmMNfu5?g_st=ac" target="_blank" rel="noopener noreferrer">공유 지도</a><a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">날씨</a><a href="https://frankfurter.dev/" target="_blank" rel="noopener noreferrer">환율</a></div>
+      <div><strong id="footerTripName">Hong Kong</strong><p id="footerTripDates">여행 날짜 미정</p></div>
+      <div class="footer-links"><a data-shared-map href="https://maps.app.goo.gl/c4aqxDU5yhHmMNfu5?g_st=ac" target="_blank" rel="noopener noreferrer">공유 지도</a><a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">날씨</a><a href="https://frankfurter.dev/" target="_blank" rel="noopener noreferrer">환율</a></div>
       <p class="photo-credit">Photo: <a href="https://commons.wikimedia.org/wiki/File:Hong_Kong_Harbour_Night_2019-06-11.jpg" target="_blank" rel="noopener noreferrer">Benh LIEU SONG / Wikimedia Commons</a>, CC BY-SA 4.0.</p>
     </div>
   </footer>

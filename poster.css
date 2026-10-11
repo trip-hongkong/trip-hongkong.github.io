@@ -3092,3 +3092,59 @@ html[data-theme="dark"] .calm-ui .participant-active-field {
     overflow-wrap: anywhere;
   }
 }
+
+/* Editable trip settings keep the same compact, mobile-first card rhythm. */
+.calm-ui .trip-settings-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  grid-column: 1 / -1;
+  padding: 24px;
+}
+.calm-ui .trip-settings-card h3 { margin: 2px 0 6px; font-size: 21px; }
+.calm-ui .trip-settings-card p:not(.card-label) { margin: 0; color: var(--muted); font-size: 12px; }
+.calm-ui .trip-settings-card .button-row { flex-wrap: wrap; }
+.calm-ui .checklist-owner-switcher {
+  grid-template-columns: none;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(92px, 1fr);
+  overflow-x: auto;
+  max-width: 100%;
+  scrollbar-width: thin;
+}
+.calm-ui .checklist-owner-face { padding-inline: 10px; }
+.calm-ui .day-switcher {
+  display: grid;
+  grid-template-columns: none;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(78px, 1fr);
+  overflow-x: auto;
+  max-width: 100%;
+  scrollbar-width: thin;
+}
+.calm-ui .day-tab strong { font-size: 18px; white-space: nowrap; }
+.calm-ui .day-switcher > .empty-state { min-width: 260px; margin: 0; padding: 14px; }
+.calm-ui .participant-new-field { display: grid; gap: 8px; margin-top: 20px; }
+.calm-ui .participant-new-field > span { font-size: 12px; font-weight: 600; }
+.calm-ui .participant-new-field small { color: var(--muted); font-weight: 400; }
+.calm-ui .stay-edit-actions { flex-wrap: wrap; margin-top: 18px; gap: 8px; }
+.calm-ui .hero-meta { flex-wrap: wrap; }
+.calm-ui .hero-meta > span { min-width: 0; overflow-wrap: anywhere; }
+.calm-ui #heroTripName { overflow-wrap: anywhere; }
+.calm-ui #activeStayName { min-width: 0; overflow-wrap: anywhere; }
+.calm-ui .hotel-card .card-title-row { gap: 12px; }
+.calm-ui .modal .form-grid input[type="date"],
+.calm-ui .modal .form-grid input[type="time"] { min-width: 0; max-width: 100%; }
+.calm-ui [hidden] { display: none !important; }
+@media (max-width: 760px) {
+  .calm-ui .trip-settings-card { align-items: stretch; flex-direction: column; gap: 16px; padding: 20px; }
+  .calm-ui .trip-settings-card .button-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .calm-ui .trip-settings-card .button-row button { min-width: 0; min-height: 44px; padding-inline: 8px; font-size: 12px; }
+  .calm-ui .checklist-owner-switcher { grid-auto-columns: minmax(90px, 1fr); }
+  .calm-ui .day-switcher { grid-auto-columns: minmax(70px, 1fr); }
+  .calm-ui .modal .form-grid input,
+  .calm-ui .modal .form-grid select,
+  .calm-ui .modal .form-grid textarea,
+  .calm-ui .participant-new-field input { font-size: 16px; }
+}

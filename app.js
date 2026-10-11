@@ -1,99 +1,30 @@
 "use strict";
 
 (() => {
-  const STORAGE_KEY = "trip-hongkong-hub-v2";
-  const LEGACY_STORAGE_KEY = "trip-hongkong-hub-v1";
+  // A new namespace keeps the previous four-person trip (including receipts) intact.
+  const DATA_PREFIX = "trip2-";
+  const STORAGE_KEY = "trip-hongkong-hub-v3";
   const DB_NAME = "trip-hongkong-media-v1";
   const DB_STORE = "receipts";
   const THEME_KEY = "trip-hongkong-theme";
   const THEME_MEDIA = window.matchMedia("(prefers-color-scheme: dark)");
-  const START_DATE = "2026-08-15";
-  const END_DATE = "2026-08-19";
   const TIMEZONE = "Asia/Hong_Kong";
   const PAGE = document.body.dataset.page || "home";
   const WEATHER_URL = "https://api.open-meteo.com/v1/forecast?latitude=22.3193&longitude=114.1694&timezone=Asia%2FHong_Kong&forecast_days=16&current=temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,wind_speed_10m,is_day&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&hourly=temperature_2m,apparent_temperature,precipitation_probability,weather_code,is_day";
   // Meteocons by Bas Milius (MIT): https://github.com/basmilius/meteocons
   const WEATHER_ICON_BASE = "https://cdn.jsdelivr.net/npm/@bybas/weather-icons@2.0.0/production/fill/all/";
   const RATE_URL = "https://api.frankfurter.dev/v2/rate/HKD/KRW";
-
-  const TRIP_DAYS = [
-    { date: "2026-08-15", day: 1, number: "15", weekday: "토", weekdayLong: "SATURDAY" },
-    { date: "2026-08-16", day: 2, number: "16", weekday: "일", weekdayLong: "SUNDAY" },
-    { date: "2026-08-17", day: 3, number: "17", weekday: "월", weekdayLong: "MONDAY" },
-    { date: "2026-08-18", day: 4, number: "18", weekday: "화", weekdayLong: "TUESDAY" },
-    { date: "2026-08-19", day: 5, number: "19", weekday: "수", weekdayLong: "WEDNESDAY" }
-  ];
-
-  const ITINERARY_MIGRATION = "confirmed-trip-plan-v1";
-  const PLACEHOLDER_CLEANUP_MIGRATION = "legacy-placeholder-cleanup-v1";
-  const CHECKLIST_SCOPE_MIGRATION = "personal-checklists-v1";
-  const CHECKLIST_TASKS_MIGRATION = "practical-checklists-v2";
-  const PARTICIPANT_NAMES_MIGRATION = "traveler-names-v1";
   const VALID_PLAN_STATUSES = new Set(["confirmed", "recommended", "flexible", "custom"]);
-  const LEGACY_PLACEHOLDERS = [
-    { id: "seed-arrival", date: "2026-08-15", time: "", title: "홍콩 도착", place: "", note: "항공편 확정 후 도착 시각과 이동 방법 입력" },
-    { id: "seed-departure", date: "2026-08-19", time: "", title: "체크아웃 · 귀국", place: "Royal Plaza Hotel", note: "항공편 확정 후 공항 출발 시각 입력" }
-  ];
-  const TRIP_ITINERARY = [
-    { id: "trip-cx413-depart", date: "2026-08-15", time: "08:00", status: "confirmed", title: "CX413 인천 출발", place: "인천국제공항 제1터미널", note: "캐세이퍼시픽 · Economy Light · 이코노미 · 위탁 수하물 1개" },
-    { id: "trip-cx413-arrive", date: "2026-08-15", time: "10:50", status: "confirmed", title: "홍콩 도착", place: "홍콩국제공항 제1터미널", note: "입국 심사와 수하물 수령 후 숙소 이동" },
-    { id: "trip-royal-arrive", date: "2026-08-15", time: "12:30", status: "recommended", title: "Royal Plaza Hotel 도착", place: "Royal Plaza Hotel Hong Kong", note: "도착 예정 12:00–13:00 · 체크인 15:00 · 객실 준비 전이면 짐 보관" },
-    { id: "trip-mong-kok", date: "2026-08-15", time: "16:00", status: "flexible", title: "몽콕 산책", place: "Mong Kok Hong Kong", note: "MOKO · 화원가 · 운동화 거리, 컨디션에 따라 짧게" },
-    { id: "trip-temple-street", date: "2026-08-15", time: "19:30", status: "flexible", title: "템플스트리트 야시장", place: "Temple Street Night Market Hong Kong", note: "첫날 저녁 · 피곤하면 다음 날로 이동" },
-    { id: "trip-peak", date: "2026-08-16", time: "08:30", status: "recommended", title: "빅토리아 피크", place: "Victoria Peak Hong Kong", note: "오전 일찍 이동 · 피크트램 운영과 날씨 확인" },
-    { id: "trip-central", date: "2026-08-16", time: "11:30", status: "recommended", title: "센트럴", place: "Central Hong Kong", note: "점심 · 타이쿤 · PMQ · 미드레벨 에스컬레이터" },
-    { id: "trip-star-ferry", date: "2026-08-16", time: "16:30", status: "recommended", title: "스타페리", place: "Central Star Ferry Pier Hong Kong", note: "센트럴에서 침사추이로 이동" },
-    { id: "trip-avenue-stars", date: "2026-08-16", time: "17:30", status: "recommended", title: "스타의 거리 · 빅토리아항", place: "Avenue of Stars Hong Kong", note: "해질 무렵부터 야경까지" },
-    { id: "trip-kowloon-park", date: "2026-08-17", time: "09:30", status: "flexible", title: "구룡채성 공원", place: "Kowloon Walled City Park Hong Kong", note: "오전 야외 일정 · 비가 많이 오면 실내 일정으로 변경" },
-    { id: "trip-west-kowloon", date: "2026-08-17", time: "14:00", status: "flexible", title: "서구룡 · M+", place: "M+ Museum Hong Kong", note: "비 오는 날에도 가능한 실내 일정" },
-    { id: "trip-k11", date: "2026-08-17", time: "18:00", status: "flexible", title: "K11 MUSEA · 침사추이", place: "K11 MUSEA Hong Kong", note: "저녁 식사와 쇼핑 · 전날 못 본 야경 보완" },
-    { id: "trip-royal-checkout", date: "2026-08-18", time: "09:00", status: "recommended", title: "Royal Plaza Hotel 체크아웃", place: "Royal Plaza Hotel Hong Kong", note: "체크아웃 11:00까지 · 객실 1실 · 3박 종료" },
-    { id: "trip-hzmb-hk", date: "2026-08-18", time: "09:30", status: "recommended", title: "HZMB 홍콩구안으로 이동", place: "HZMB Hong Kong Port", note: "큰 짐이 있으면 택시 또는 6인승 차량 검토" },
-    { id: "trip-gold-bus", date: "2026-08-18", time: "11:10", status: "recommended", title: "금바로 마카오 이동", place: "HZMB Macao Port", note: "출입경 포함 전체 이동 3–4시간 예상" },
-    { id: "trip-broadway-checkin", date: "2026-08-18", time: "13:30", status: "recommended", title: "Broadway Hotel 도착", place: "Broadway Hotel Macau", note: "체크인 15:00 · 객실 준비 전이면 짐 보관 · Broadway King 2실" },
-    { id: "trip-macau-old-town", date: "2026-08-18", time: "15:00", status: "flexible", title: "마카오 구시가지", place: "Senado Square Macau", note: "세나도 광장 · 성바울 유적 · 몬테요새" },
-    { id: "trip-cotai", date: "2026-08-18", time: "19:30", status: "flexible", title: "코타이 야경", place: "Galaxy Macau", note: "Galaxy · Broadway 주변에서 저녁" },
-    { id: "trip-broadway-checkout", date: "2026-08-19", time: "10:20", status: "recommended", title: "Broadway Hotel 체크아웃", place: "Broadway Hotel Macau", note: "체크아웃 11:00까지 · 객실 2실 · 1박 종료" },
-    { id: "trip-macau-port", date: "2026-08-19", time: "11:15", status: "recommended", title: "마카오구안 도착 · 상류 체크인", place: "HZMB Macao Port", note: "HKIA 직행버스 카운터 · 이용 가능 여부와 수하물 연결 사전 확인" },
-    { id: "trip-skypier-coach", date: "2026-08-19", time: "12:30", status: "recommended", title: "HKIA SkyPier 직행버스", place: "Hong Kong International Airport SkyPier", note: "별도 예약 필요 · 예상 도착 13:15" },
-    { id: "trip-cx430-depart", date: "2026-08-19", time: "17:40", status: "confirmed", title: "CX430 홍콩 출발", place: "홍콩국제공항 제1터미널", note: "캐세이퍼시픽 · Economy Light · 이코노미 · 위탁 수하물 1개" },
-    { id: "trip-cx430-arrive", date: "2026-08-19", time: "22:25", status: "confirmed", title: "인천 도착", place: "인천국제공항 제1터미널", note: "비행시간 3시간 45분" }
-  ];
-  const STAYS = [
-    { city: "HONG KONG", status: "3박", name: "Royal Plaza Hotel", address: "193 Prince Edward Road West, Kowloon, Hong Kong", addressHtml: "193 Prince Edward Road West,<br>Kowloon, Hong Kong", dates: "15–18 AUG", room: "Family · 1실", checkIn: "15 AUG · 15:00", checkOut: "18 AUG · 11:00" },
-    { city: "MACAU", status: "1박", name: "Broadway Hotel", address: "Sul da Marina Taipa-Sul, junto a Rotunda do Dique Oeste, Taipa, Macau", addressHtml: "Sul da Marina Taipa-Sul,<br>Taipa, Macau", dates: "18–19 AUG", room: "King · 2실", checkIn: "18 AUG · 15:00", checkOut: "19 AUG · 11:00" }
-  ];
-
-  const CHECKLIST_OWNERS = [
-    { id: "common", label: "공통" },
-    { id: "minje", label: "민제" },
-    { id: "junho", label: "준호" },
-    { id: "juyoung", label: "주영" },
-    { id: "junhyuk", label: "준혁" }
-  ];
-  const CHECKLIST_OWNER_PARTICIPANT_IDS = {
-    minje: "person-me",
-    junho: "person-companion",
-    juyoung: "person-companion-2",
-    junhyuk: "person-companion-3"
-  };
-  const CHECK_OWNER_IDS = new Set(CHECKLIST_OWNERS.map((owner) => owner.id));
-  const FIXED_PARTICIPANT_IDS = new Set(["person-me", "person-companion", "person-companion-2", "person-companion-3"]);
   const COMMON_CHECK_CATEGORIES = ["예약·티켓", "교통·이동", "함께 준비"];
   const PERSONAL_CHECK_CATEGORIES = ["개인 준비", "위탁 수하물", "기내 수하물"];
   const CHECK_CATEGORIES = [...COMMON_CHECK_CATEGORIES, ...PERSONAL_CHECK_CATEGORIES];
   const COMMON_CHECKLIST_TEMPLATES = [
-    { id: "before-flight", category: "예약·티켓", text: "CX413·CX430 항공편 예약 내용 확인", done: true },
-    { id: "before-hotel", category: "예약·티켓", text: "홍콩·마카오 숙소 예약 내용 확인", done: true },
-    { id: "common-disney", category: "예약·티켓", text: "홍콩 디즈니랜드 방문일 정하고 4명 예매", url: "https://www.hongkongdisneyland.com/book/tickets/", linkLabel: "예매", done: false },
-    { id: "common-hk-restaurant", category: "예약·티켓", text: "홍콩 식당 후보 찾기", url: "https://www.openrice.com/en/hongkong", linkLabel: "후보", done: false },
-    { id: "common-macau-restaurant", category: "예약·티켓", text: "마카오 식당 후보 찾기", url: "https://www.openrice.com/en/macau", linkLabel: "후보", done: false },
-    { id: "common-gold-bus", category: "교통·이동", text: "8/18 홍콩 → 마카오 금바 예매", url: "https://i.hzmbus.com/webhtml/index.html", linkLabel: "예매", done: false },
-    { id: "common-airport-bus", category: "교통·이동", text: "8/19 마카오 → 홍콩공항 직행버스 4명 예매", url: "https://ticket.macauhkairportbus.com/", linkLabel: "예매", done: false },
-    { id: "before-map", category: "함께 준비", text: "공유 지도에 갈 곳 최종 정리", url: "https://maps.app.goo.gl/c4aqxDU5yhHmMNfu5?g_st=ac", linkLabel: "지도", done: true },
-    { id: "common-restaurant-links", category: "함께 준비", text: "선택한 식당 예약 링크 등록하기", done: false },
-    { id: "common-share-confirmations", category: "함께 준비", text: "예약 확인서·QR을 4명에게 공유", done: false },
-    { id: "common-online-checkin", category: "함께 준비", text: "출발 48시간 전 4명 온라인 체크인", url: "https://www.cathaypacific.com/mb/#/en_HK/login", linkLabel: "체크인", done: false }
+    { id: "flight", category: "예약·티켓", text: "항공편 예약·수하물 규정 확인", done: false },
+    { id: "hotel", category: "예약·티켓", text: "숙소 예약·체크인 시간 확인", done: false },
+    { id: "tickets", category: "예약·티켓", text: "관광지·식당 예약하기", done: false },
+    { id: "transport", category: "교통·이동", text: "공항·도시 간 이동 방법 정하기", done: false },
+    { id: "map", category: "함께 준비", text: "갈 곳을 지도에 저장하기", done: false },
+    { id: "documents", category: "함께 준비", text: "예약 확인서·QR 공유하기", done: false }
   ];
   const PERSONAL_CHECKLIST_TEMPLATES = [
     { key: "passport", category: "개인 준비", text: "여권 유효기간·영문 이름 확인" },
@@ -111,7 +42,6 @@
     { key: "liquids", category: "기내 수하물", text: "100ml 이하 액체 · 지퍼백" },
     { key: "rain", category: "기내 수하물", text: "접이식 우산 · 우비" }
   ];
-  const VALID_DATES = new Set(TRIP_DAYS.map((day) => day.date));
   const VALID_CURRENCIES = new Set(["HKD", "KRW"]);
   const VALID_CATEGORIES = new Set(["식비", "교통", "숙소", "관광", "쇼핑", "기타"]);
   const SECTIONS = new Set(["prepare", "trip", "settle"]);
@@ -161,53 +91,111 @@
     applyTheme(document.documentElement.dataset.theme === "dark" ? "light" : "dark", true);
   }
 
+  function defaultTrip() {
+    return { name: "Hong Kong", startDate: "", endDate: "", mapUrl: "https://maps.app.goo.gl/c4aqxDU5yhHmMNfu5?g_st=ac" };
+  }
+
+  function defaultParticipants() {
+    return [
+      { id: DATA_PREFIX + "person-junhyuk", name: "소준혁", active: true, createdAt: "2026-10-11T00:00:00.000Z" },
+      { id: DATA_PREFIX + "person-partner", name: "여자친구", active: true, createdAt: "2026-10-11T00:00:00.000Z" }
+    ];
+  }
+
   function defaultState() {
+    const participants = defaultParticipants();
     return {
-      schemaVersion: 6,
-      meta: { appliedMigrations: [ITINERARY_MIGRATION, PLACEHOLDER_CLEANUP_MIGRATION, CHECKLIST_SCOPE_MIGRATION, CHECKLIST_TASKS_MIGRATION, PARTICIPANT_NAMES_MIGRATION] },
-      checklist: checklistSeeds(),
-      itinerary: TRIP_ITINERARY.map((item) => ({ ...item })),
-      participants: [
-        { id: "person-me", name: "민제", active: true, createdAt: new Date().toISOString() },
-        { id: "person-companion", name: "준호", active: true, createdAt: new Date().toISOString() },
-        { id: "person-companion-2", name: "주영", active: true, createdAt: new Date().toISOString() },
-        { id: "person-companion-3", name: "준혁", active: true, createdAt: new Date().toISOString() }
-      ],
+      schemaVersion: 7,
+      meta: { generation: DATA_PREFIX },
+      trip: defaultTrip(),
+      stays: [],
+      checklist: checklistSeeds(participants),
+      itinerary: [],
+      participants,
       expenses: [],
       weatherCache: null,
       rateCache: null,
-      ui: { activeDate: START_DATE, hideCompleted: false, activeChecklistOwner: "common" }
+      ui: { activeDate: "", hideCompleted: false, activeChecklistOwner: "common" }
     };
   }
 
+  function checklistOwners(participants = state.participants) {
+    return [{ id: "common", label: "전체" }, ...participants.filter((person) => person.active).map((person) => ({ id: person.id, label: person.name }))];
+  }
+
   function commonChecklistSeeds() {
-    return COMMON_CHECKLIST_TEMPLATES.map((item) => ({ ...item, ownerId: "common" }));
+    return COMMON_CHECKLIST_TEMPLATES.map((item) => ({ ...item, id: DATA_PREFIX + "check-" + item.id, ownerId: "common" }));
   }
 
   function personalChecklistId(ownerId, item) {
-    const prefix = item.category === "개인 준비" ? "personal" : item.category === "위탁 수하물" ? "packing" : "carry";
-    return `${prefix}-${ownerId}-${item.key}`;
+    return `${DATA_PREFIX}check-${ownerId.slice(DATA_PREFIX.length)}-${item.key}`;
   }
 
-  function personalChecklistSeeds() {
-    return CHECKLIST_OWNERS.filter((owner) => owner.id !== "common").flatMap((owner) => (
-      PERSONAL_CHECKLIST_TEMPLATES.map((item) => ({
-        id: personalChecklistId(owner.id, item),
-        ownerId: owner.id,
-        category: item.category,
-        text: item.text,
-        done: false
-      }))
-    ));
+  function personalChecklistSeeds(participants) {
+    return participants.filter((person) => person.active).flatMap((person) => PERSONAL_CHECKLIST_TEMPLATES.map((item) => ({
+      id: personalChecklistId(person.id, item), ownerId: person.id, category: item.category, text: item.text, done: false
+    })));
   }
 
-  function checklistSeeds() {
-    return [...commonChecklistSeeds(), ...personalChecklistSeeds()];
+  function checklistSeeds(participants = defaultParticipants()) {
+    return [...commonChecklistSeeds(), ...personalChecklistSeeds(participants)];
   }
 
   function makeId(prefix) {
-    if (globalThis.crypto && typeof globalThis.crypto.randomUUID === "function") return `${prefix}-${globalThis.crypto.randomUUID()}`;
-    return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    const unique = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    return `${DATA_PREFIX}${prefix}-${unique}`;
+  }
+
+  function isValidDate(value) {
+    if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+    const date = new Date(value + "T12:00:00Z");
+    return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value && value >= "1900-01-01" && value <= "2100-12-31";
+  }
+
+  function sanitizeTrip(input) {
+    const base = defaultTrip();
+    if (!input || typeof input !== "object") return base;
+    const startDate = isValidDate(input.startDate) ? input.startDate : "";
+    const endDate = isValidDate(input.endDate) && startDate && input.endDate >= startDate ? input.endDate : "";
+    return { name: cleanText(input.name, 60) || base.name, startDate, endDate, mapUrl: cleanChecklistUrl(input.mapUrl) };
+  }
+
+  function sanitizeStays(items) {
+    if (!Array.isArray(items)) return [];
+    return items.slice(0, 50).filter((item) => item && cleanText(item.name, 80)).map((item) => ({
+      id: cleanText(item.id, 100) || makeId("hotel"),
+      name: cleanText(item.name, 80),
+      address: cleanText(item.address, 200),
+      checkInDate: isValidDate(item.checkInDate) ? item.checkInDate : "",
+      checkOutDate: isValidDate(item.checkOutDate) && (!item.checkInDate || item.checkOutDate >= item.checkInDate) ? item.checkOutDate : "",
+      checkInTime: /^([01]\d|2[0-3]):[0-5]\d$/.test(item.checkInTime) ? item.checkInTime : "",
+      checkOutTime: /^([01]\d|2[0-3]):[0-5]\d$/.test(item.checkOutTime) ? item.checkOutTime : "",
+      room: cleanText(item.room, 60),
+      rooms: Number.isInteger(Number(item.rooms)) && Number(item.rooms) >= 1 && Number(item.rooms) <= 50 ? Number(item.rooms) : 1,
+      breakfast: ["included", "excluded"].includes(item.breakfast) ? item.breakfast : "",
+      note: cleanText(item.note, 160)
+    }));
+  }
+
+  function tripDays() {
+    const dates = new Set(state.itinerary.map((item) => item.date).filter(isValidDate));
+    if (state.trip.startDate && state.trip.endDate) {
+      const count = daysBetween(state.trip.startDate, state.trip.endDate) + 1;
+      for (let index = 0; index < Math.min(count, 366); index += 1) {
+        dates.add(new Date(dateValue(state.trip.startDate) + index * 86400000).toISOString().slice(0, 10));
+      }
+    } else if (state.trip.startDate) dates.add(state.trip.startDate);
+    if (isValidDate(state.ui.activeDate)) dates.add(state.ui.activeDate);
+    const koWeekdays = ["일", "월", "화", "수", "목", "금", "토"];
+    const enWeekdays = ["SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"];
+    return [...dates].sort().map((date, index) => {
+      const weekday = new Date(dateValue(date)).getUTCDay();
+      return { date, day: index + 1, month: Number(date.slice(5, 7)), number: String(Number(date.slice(8))), weekday: koWeekdays[weekday], weekdayLong: enWeekdays[weekday] };
+    });
+  }
+
+  function shortDate(date) {
+    return isValidDate(date) ? `${Number(date.slice(5, 7))}월 ${Number(date.slice(8))}일` : "날짜 미정";
   }
 
   function cleanText(value, maxLength = 200) {
@@ -245,18 +233,19 @@
     return ownerId === "common" ? "함께 준비" : "개인 준비";
   }
 
-  function sanitizeChecklist(items, fallback) {
+  function sanitizeChecklist(items, fallback, participants) {
     if (!Array.isArray(items)) return fallback;
     if (!items.length) return [];
     const ids = new Set();
     const cleaned = items.slice(0, 500).map((item) => {
       if (!item || typeof item !== "object" || (item.phase && item.phase !== "before")) return null;
+      if (item.ownerId && item.ownerId !== "common" && !participants.some((person) => person.id === item.ownerId)) return null;
       const text = cleanText(item.text, 100);
       if (!text) return null;
       let id = cleanText(item.id, 100) || makeId("check");
       while (ids.has(id)) id = makeId("check");
       ids.add(id);
-      const ownerId = CHECK_OWNER_IDS.has(item.ownerId) ? item.ownerId : "common";
+      const ownerId = item.ownerId || "common";
       return {
         id,
         ownerId,
@@ -273,12 +262,12 @@
   function sanitizeItinerary(items, fallback) {
     if (!Array.isArray(items)) return fallback;
     const cleaned = items.slice(0, 300).map((item) => {
-      if (!item || typeof item !== "object") return null;
+      if (!item || typeof item !== "object" || !isValidDate(item.date)) return null;
       const title = cleanText(item.title, 100);
       if (!title) return null;
       return {
         id: cleanText(item.id, 100) || makeId("plan"),
-        date: VALID_DATES.has(item.date) ? item.date : START_DATE,
+        date: item.date,
         time: /^([01]\d|2[0-3]):[0-5]\d$/.test(item.time) ? item.time : "",
         status: VALID_PLAN_STATUSES.has(item.status) ? item.status : "custom",
         title,
@@ -350,7 +339,7 @@
       }
       return {
         id: cleanText(item.id, 100) || makeId("expense"),
-        date: /^\d{4}-\d{2}-\d{2}$/.test(item.date) ? item.date : START_DATE,
+        date: isValidDate(item.date) ? item.date : todayInHongKong(),
         category: VALID_CATEGORIES.has(item.category) ? item.category : "기타",
         description,
         currency,
@@ -365,215 +354,42 @@
     }).filter(Boolean);
   }
 
-  function sanitizeMeta(meta) {
-    const appliedMigrations = meta && Array.isArray(meta.appliedMigrations)
-      ? [...new Set(meta.appliedMigrations.map((item) => cleanText(item, 80)).filter(Boolean))].slice(0, 30)
-      : [];
-    return { appliedMigrations };
-  }
-
-  function sameItineraryItem(left, right) {
-    return ["id", "date", "time", "title", "place", "note"].every((key) => left[key] === right[key]);
-  }
-
-  function itineraryFingerprint(item) {
-    return [item.date, item.time, item.title, item.place, item.note].join("|");
-  }
-
-  function previousChecklistDone(seed, previousById) {
-    if (seed.id === "before-map") return ["before-map", "before-hotel-map"].some((id) => previousById.get(id)?.done);
-    const exact = previousById.get(seed.id);
-    if (exact) return exact.done;
-    if (seed.ownerId === "common") {
-      return seed.done;
-    }
-
-    const template = PERSONAL_CHECKLIST_TEMPLATES.find((item) => personalChecklistId(seed.ownerId, item) === seed.id);
-    if (!template) return false;
-    const legacyIds = {
-      passport: ["before-passport"],
-      insurance: ["before-insurance"],
-      esim: ["before-esim"],
-      payment: ["before-payment"],
-      clothes: [`packing-${seed.ownerId}-clothes`],
-      toiletries: [`packing-${seed.ownerId}-toiletries`],
-      shoes: ["before-shoes"],
-      essentials: [`packing-${seed.ownerId}-essentials`],
-      documents: [],
-      charger: [`packing-${seed.ownerId}-power`, "before-adapter"],
-      battery: [`packing-${seed.ownerId}-power`],
-      medicine: ["before-medicine"],
-      liquids: [],
-      rain: ["before-rain"]
-    }[template.key] || [];
-    return legacyIds.some((id) => previousById.get(id)?.done);
-  }
-
-  function migratePracticalChecklist(previous) {
-    const previousById = new Map(previous.map((item) => [item.id, item]));
-    const legacyDefaultIds = new Set([
-      "before-flight", "before-hotel", "before-passport", "before-insurance",
-      "before-esim", "before-payment", "before-map", "before-hotel-map",
-      "before-adapter", "before-rain", "before-medicine", "before-shoes"
-    ]);
-    CHECKLIST_OWNERS.filter((owner) => owner.id !== "common").forEach((owner) => {
-      ["clothes", "toiletries", "essentials", "power"].forEach((key) => legacyDefaultIds.add(`packing-${owner.id}-${key}`));
-    });
-    checklistSeeds().forEach((item) => legacyDefaultIds.add(item.id));
-
-    const seeds = checklistSeeds().map((item) => ({ ...item, done: previousChecklistDone(item, previousById) }));
-    const usedIds = new Set(seeds.map((item) => item.id));
-    const custom = [];
-    const append = (item) => {
-      let id = item.id;
-      while (usedIds.has(id)) id = makeId("check");
-      usedIds.add(id);
-      custom.push({ ...item, id });
-    };
-
-    previous.forEach((item) => {
-      if (legacyDefaultIds.has(item.id)) return;
-      if (item.ownerId === "common" && ["위탁 수하물", "기내 수하물"].includes(item.category)) {
-        CHECKLIST_OWNERS.filter((owner) => owner.id !== "common").forEach((owner) => {
-          append({ ...item, id: `migrated-${owner.id}-${item.id}`.slice(0, 100), ownerId: owner.id });
-        });
-        return;
-      }
-      const allowedCategories = checklistCategoriesForOwner(item.ownerId);
-      append({
-        ...item,
-        category: allowedCategories.includes(item.category)
-          ? item.category
-          : item.ownerId === "common" ? "함께 준비" : "개인 준비"
-      });
-    });
-
-    return [...seeds, ...custom];
-  }
-
-  function normalizeChecklistScopes(items) {
-    return items.map((item) => {
-      const allowedCategories = checklistCategoriesForOwner(item.ownerId);
-      if (allowedCategories.includes(item.category)) return item;
-      return {
-        ...item,
-        category: item.ownerId === "common" ? "함께 준비" : "개인 준비"
-      };
-    });
-  }
-
-  function applyMigrations(input) {
-    if (!input.meta.appliedMigrations.includes(ITINERARY_MIGRATION)) {
-      input.itinerary = input.itinerary.filter((item) => !LEGACY_PLACEHOLDERS.some((legacy) => sameItineraryItem(item, legacy)));
-      const ids = new Set(input.itinerary.map((item) => item.id));
-      const fingerprints = new Set(input.itinerary.map(itineraryFingerprint));
-      TRIP_ITINERARY.forEach((item) => {
-        if (ids.has(item.id) || fingerprints.has(itineraryFingerprint(item))) return;
-        input.itinerary.push({ ...item });
-        ids.add(item.id);
-        fingerprints.add(itineraryFingerprint(item));
-      });
-
-      input.checklist = input.checklist.map((item) => (
-        item.id === "before-flight" || item.id === "before-hotel" ? { ...item, done: true } : item
-      ));
-
-      const participantIds = new Set(input.participants.map((person) => person.id));
-      if (input.participants.length === 2 && participantIds.has("person-me") && participantIds.has("person-companion")) {
-        input.participants.push(
-          { id: "person-companion-2", name: "동행 2", active: true, createdAt: new Date().toISOString() },
-          { id: "person-companion-3", name: "동행 3", active: true, createdAt: new Date().toISOString() }
-        );
-      }
-      input.meta.appliedMigrations.push(ITINERARY_MIGRATION);
-    }
-
-    if (!input.meta.appliedMigrations.includes(PLACEHOLDER_CLEANUP_MIGRATION)) {
-      input.itinerary = input.itinerary.filter((item) => item.id !== "seed-arrival" && item.id !== "seed-departure");
-      input.meta.appliedMigrations.push(PLACEHOLDER_CLEANUP_MIGRATION);
-    }
-
-    if (!input.meta.appliedMigrations.includes(CHECKLIST_SCOPE_MIGRATION)) {
-      const checklistIds = new Set(input.checklist.map((item) => item.id));
-      personalChecklistSeeds().forEach((item) => {
-        if (checklistIds.has(item.id)) return;
-        input.checklist.push(item);
-        checklistIds.add(item.id);
-      });
-      input.meta.appliedMigrations.push(CHECKLIST_SCOPE_MIGRATION);
-    }
-
-    if (!input.meta.appliedMigrations.includes(CHECKLIST_TASKS_MIGRATION)) {
-      input.checklist = migratePracticalChecklist(input.checklist);
-      input.meta.appliedMigrations.push(CHECKLIST_TASKS_MIGRATION);
-    }
-
-    if (!input.meta.appliedMigrations.includes(PARTICIPANT_NAMES_MIGRATION)) {
-      const travelerNames = {
-        "person-me": ["나", "민제"],
-        "person-companion": ["동행 1", "준호"],
-        "person-companion-2": ["동행 2", "주영"],
-        "person-companion-3": ["동행 3", "준혁"]
-      };
-      const replacementNames = {
-        "person-me": "민제",
-        "person-companion": "준호",
-        "person-companion-2": "주영",
-        "person-companion-3": "준혁"
-      };
-      input.participants = input.participants.map((person) => (
-        travelerNames[person.id]?.includes(person.name) ? { ...person, name: replacementNames[person.id] } : person
-      ));
-      input.meta.appliedMigrations.push(PARTICIPANT_NAMES_MIGRATION);
-    }
-
-    input.checklist = normalizeChecklistScopes(input.checklist);
-
-    input.schemaVersion = 6;
-    return input;
-  }
 
   function sanitizeState(input) {
     const base = defaultState();
-    if (!input || typeof input !== "object") return base;
+    if (!input || typeof input !== "object" || input.meta?.generation !== DATA_PREFIX) return base;
     const rateCache = sanitizeCache(input.rateCache, "rate");
     const participants = sanitizeParticipants(input.participants, base.participants);
+    const trip = sanitizeTrip(input.trip);
     const ui = input.ui && typeof input.ui === "object" ? input.ui : {};
+    const itinerary = sanitizeItinerary(input.itinerary, base.itinerary);
     return {
-      schemaVersion: 6,
-      meta: sanitizeMeta(input.meta),
-      checklist: sanitizeChecklist(input.checklist, base.checklist),
-      itinerary: sanitizeItinerary(input.itinerary, base.itinerary),
+      schemaVersion: 7,
+      meta: { generation: DATA_PREFIX },
+      trip,
+      stays: sanitizeStays(input.stays),
+      checklist: sanitizeChecklist(input.checklist, base.checklist, participants),
+      itinerary,
       participants,
       expenses: sanitizeExpenses(input.expenses, participants, rateCache),
       weatherCache: sanitizeCache(input.weatherCache, "weather"),
       rateCache,
       ui: {
-        activeDate: VALID_DATES.has(ui.activeDate) ? ui.activeDate : bestActiveDate(),
+        activeDate: isValidDate(ui.activeDate) ? ui.activeDate : (trip.startDate || itinerary[0]?.date || ""),
         hideCompleted: ui.hideCompleted === true,
-        activeChecklistOwner: CHECK_OWNER_IDS.has(ui.activeChecklistOwner) ? ui.activeChecklistOwner : "common"
+        activeChecklistOwner: checklistOwners(participants).some((owner) => owner.id === ui.activeChecklistOwner) ? ui.activeChecklistOwner : "common"
       }
     };
   }
 
   function normalizeState(input) {
-    return applyMigrations(sanitizeState(input));
+    return sanitizeState(input);
   }
 
   function loadState() {
     try {
       const current = localStorage.getItem(STORAGE_KEY);
-      if (current) {
-        const normalized = normalizeState(JSON.parse(current));
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(normalized));
-        return normalized;
-      }
-      const legacy = localStorage.getItem(LEGACY_STORAGE_KEY);
-      if (legacy) {
-        const migrated = normalizeState(JSON.parse(legacy));
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(migrated));
-        return migrated;
-      }
+      if (current) return normalizeState(JSON.parse(current));
     } catch (error) {
       console.warn("저장 데이터를 불러오지 못했습니다.", error);
     }
@@ -582,6 +398,8 @@
 
   function getSharedState() {
     return {
+      trip: state.trip,
+      stays: state.stays,
       checklist: state.checklist,
       itinerary: state.itinerary,
       participants: state.participants,
@@ -597,6 +415,8 @@
     if (!shared || typeof shared !== "object") return;
     state = normalizeState({
       ...state,
+      trip: shared.trip || state.trip,
+      stays: shared.stays || [],
       checklist: shared.checklist,
       itinerary: shared.itinerary,
       participants: shared.participants,
@@ -665,12 +485,12 @@
 
   function bestActiveDate() {
     const today = todayInHongKong();
-    if (VALID_DATES.has(today)) return today;
-    return today > END_DATE ? END_DATE : START_DATE;
+    if (state.trip.startDate && state.trip.endDate && today >= state.trip.startDate && today <= state.trip.endDate) return today;
+    return state.trip.startDate || state.itinerary[0]?.date || "";
   }
 
   function selectedDay() {
-    return TRIP_DAYS.find((day) => day.date === state.ui.activeDate) || TRIP_DAYS[0];
+    return tripDays().find((day) => day.date === state.ui.activeDate) || tripDays()[0] || { date: "", day: 0, month: "", number: "", weekday: "", weekdayLong: "ITINERARY" };
   }
 
   function formatKRW(value) {
@@ -701,10 +521,7 @@
   }
 
   function checklistOwnerById(id) {
-    const owner = CHECKLIST_OWNERS.find((entry) => entry.id === id) || CHECKLIST_OWNERS[0];
-    const participantId = CHECKLIST_OWNER_PARTICIPANT_IDS[owner.id];
-    const participant = participantId ? personById(participantId) : null;
-    return participant ? { ...owner, label: participant.name } : owner;
+    return checklistOwners().find((owner) => owner.id === id) || checklistOwners()[0];
   }
 
   function prepStats(ownerId = null) {
@@ -715,20 +532,40 @@
   }
 
   function updateTripStatus() {
+    const { name, startDate, endDate, mapUrl } = state.trip;
+    const people = state.participants.filter((person) => person.active);
+    const duration = startDate && endDate ? daysBetween(startDate, endDate) : null;
+    const range = startDate ? `${startDate.replaceAll("-", ". ")}${endDate ? " — " + endDate.replaceAll("-", ". ") : " 출발"}` : "여행 날짜 미정";
+    document.title = name + " · Trip";
+    if ($("#heroTripName")) $("#heroTripName").textContent = name + ",";
+    if ($("#heroEyebrow")) $("#heroEyebrow").textContent = startDate ? name.toUpperCase() + " · " + startDate.slice(0, 4) : name.toUpperCase();
+    if ($("#heroDuration")) $("#heroDuration").textContent = duration === null ? "날짜 미정" : `${duration}박 ${duration + 1}일`;
+    if ($("#heroPeople")) $("#heroPeople").textContent = `${people.length}명 · ${people.map((person) => person.name).join(" · ")}`;
+    if ($("#tripDateSummary")) $("#tripDateSummary").textContent = range;
+    if ($("#tripSettingsName")) $("#tripSettingsName").textContent = name;
+    if ($("#tripSettingsSummary")) $("#tripSettingsSummary").textContent = `${range} · ${people.length}명`;
+    if ($("#footerTripName")) $("#footerTripName").textContent = name;
+    if ($("#footerTripDates")) $("#footerTripDates").textContent = range;
+    if ($("#boardingDuration")) $("#boardingDuration").textContent = duration === null ? "DATES TBD" : `${duration + 1} DAYS`;
+    $$("[data-shared-map]").forEach((link) => { link.hidden = !mapUrl; link.href = mapUrl || "#"; });
     const label = $("#tripStatusLabel");
     const countdown = $("#tripCountdown");
     const date = $("#tripStatusDate");
     if (!label || !countdown || !date) return;
     const today = todayInHongKong();
-    if (today < START_DATE) {
+    if (!startDate) {
+      label.textContent = "여행 준비";
+      countdown.textContent = "TBD";
+      date.textContent = "날짜를 설정해 주세요";
+    } else if (today < startDate) {
       label.textContent = "여행 전";
-      countdown.textContent = `D–${daysBetween(today, START_DATE)}`;
-      date.textContent = "2026. 08. 15 출발";
-    } else if (today <= END_DATE) {
-      const day = daysBetween(START_DATE, today) + 1;
+      countdown.textContent = `D–${daysBetween(today, startDate)}`;
+      date.textContent = startDate.replaceAll("-", ". ") + " 출발";
+    } else if (!endDate || today <= endDate) {
+      const day = daysBetween(startDate, today) + 1;
       label.textContent = `여행 중 · ${day}일차`;
       countdown.textContent = `DAY ${day}`;
-      date.textContent = `${today.slice(5).replace("-", ". ")}`;
+      date.textContent = shortDate(today);
     } else {
       label.textContent = "여행 완료";
       countdown.textContent = "+DONE";
@@ -764,7 +601,7 @@
     const container = $("#checklistOwnerSwitcher");
     if (!container) return;
     const legend = createElement("legend", "visually-hidden", "체크리스트 선택");
-    const controls = CHECKLIST_OWNERS.map((owner) => {
+    const controls = checklistOwners().map((owner) => {
       const displayOwner = checklistOwnerById(owner.id);
       const stats = prepStats(owner.id);
       const label = createElement("label", "checklist-owner-option");
@@ -881,6 +718,8 @@
   }
 
   function renderPrepare() {
+    repairChecklistSelection();
+    renderStays();
     if ($("#hideCompleted")) $("#hideCompleted").checked = state.ui.hideCompleted;
     renderChecklistOwners();
     renderChecklistForm();
@@ -893,16 +732,17 @@
     if (!container) return;
     const today = todayInHongKong();
     container.replaceChildren();
-    TRIP_DAYS.forEach((day) => {
+    if (!tripDays().length) container.append(createElement("p", "empty-state", "날짜를 설정하면 날짜별 일정이 표시됩니다."));
+    tripDays().forEach((day) => {
       const button = createElement("button", `day-tab${day.date === today ? " is-today" : ""}`);
       button.type = "button";
       button.role = "tab";
       button.dataset.date = day.date;
       button.setAttribute("aria-selected", String(day.date === state.ui.activeDate));
       button.setAttribute("aria-controls", "timeline");
-      button.setAttribute("aria-label", `8월 ${day.number}일 ${day.weekdayLong}, ${day.day}일차`);
+      button.setAttribute("aria-label", `${shortDate(day.date)} ${day.weekdayLong}, ${day.day}일차`);
       button.tabIndex = day.date === state.ui.activeDate ? 0 : -1;
-      button.append(createElement("strong", "", day.number), createElement("span", "", day.weekday));
+      button.append(createElement("strong", "", `${day.month}/${day.number}`), createElement("span", "", day.weekday));
       container.append(button);
     });
   }
@@ -936,9 +776,9 @@
     const timeline = $("#timeline");
     if (!timeline) return;
     const day = selectedDay();
-    if ($("#selectedDayLabel")) $("#selectedDayLabel").textContent = `DAY ${day.day}`;
+    if ($("#selectedDayLabel")) $("#selectedDayLabel").textContent = day.date ? `DAY ${day.day}` : "날짜 미정";
     if ($("#selectedDayEnglish")) $("#selectedDayEnglish").textContent = day.weekdayLong;
-    if ($("#selectedDayTitle")) $("#selectedDayTitle").textContent = `8월 ${day.number}일 · ${day.weekday}요일`;
+    if ($("#selectedDayTitle")) $("#selectedDayTitle").textContent = day.date ? `${shortDate(day.date)} · ${day.weekday}요일` : "여행 날짜 미정";
     const items = state.itinerary.filter((item) => item.date === day.date).sort((a, b) => (a.time || "99:99").localeCompare(b.time || "99:99"));
     renderMobileNext(items, day);
     timeline.replaceChildren();
@@ -981,24 +821,114 @@
     });
   }
 
+  function stayDates(stay) {
+    return `${shortDate(stay.checkInDate)} — ${shortDate(stay.checkOutDate)}`;
+  }
+
+  function stayNights(stay) {
+    return stay.checkInDate && stay.checkOutDate ? `${daysBetween(stay.checkInDate, stay.checkOutDate)}박` : "날짜 미정";
+  }
+
+  function renderStays() {
+    const container = $("#stayList");
+    if (!container) return;
+    container.replaceChildren();
+    if (!state.stays.length) { container.append(createElement("p", "empty-state", "등록된 숙소가 없습니다.")); return; }
+    [...state.stays].sort((a, b) => a.checkInDate.localeCompare(b.checkInDate)).forEach((stay) => {
+      const card = createElement("details", "booking-card stay-booking");
+      const summary = createElement("summary", "booking-summary");
+      const copy = createElement("span");
+      copy.append(createElement("small", "", stayDates(stay)), createElement("strong", "", stay.name), createElement("em", "", `${stayNights(stay)} · ${stay.rooms}실${stay.room ? " · " + stay.room : ""}`));
+      summary.append(copy);
+      const detail = createElement("div", "booking-detail");
+      const facts = createElement("div", "booking-facts is-four");
+      [["체크인", `${shortDate(stay.checkInDate)} · ${stay.checkInTime || "시간 미정"}`],
+       ["체크아웃", `${shortDate(stay.checkOutDate)} · ${stay.checkOutTime || "시간 미정"}`],
+       ["객실", stay.room || "미입력"],
+       ["조식", stay.breakfast === "included" ? "포함" : stay.breakfast === "excluded" ? "불포함" : "미입력"]].forEach(([label, value]) => {
+        const fact = createElement("span");
+        fact.append(createElement("small", "", label), createElement("b", "", value));
+        facts.append(fact);
+      });
+      detail.append(facts);
+      if (stay.address) detail.append(createElement("p", "booking-address", stay.address));
+      if (stay.note) detail.append(createElement("p", "", stay.note));
+      const actions = createElement("div", "inline-actions stay-edit-actions");
+      const edit = createElement("button", "secondary-button", "✎ 수정");
+      edit.type = "button"; edit.dataset.action = "edit-stay"; edit.dataset.id = stay.id;
+      const remove = createElement("button", "danger-button", "삭제");
+      remove.type = "button"; remove.dataset.action = "delete-stay"; remove.dataset.id = stay.id;
+      const map = createElement("a", "secondary-button", "지도 ↗");
+      map.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(stay.name + " " + stay.address)}`;
+      map.target = "_blank"; map.rel = "noopener noreferrer";
+      actions.append(edit, map, remove);
+      detail.append(actions);
+      card.append(summary, detail);
+      container.append(card);
+    });
+  }
+
   function renderStayCard() {
-    const stay = state.ui.activeDate >= "2026-08-18" ? STAYS[1] : STAYS[0];
-    if ($("#activeStayLabel")) $("#activeStayLabel").textContent = `STAY · ${stay.city}`;
-    if ($("#activeStayStatus")) $("#activeStayStatus").textContent = stay.status;
+    const hotel = $("#activeStayCard");
+    const empty = $("#emptyStayCard");
+    const stay = state.stays.find((item) => item.checkInDate && state.ui.activeDate >= item.checkInDate && (!item.checkOutDate || state.ui.activeDate <= item.checkOutDate)) || state.stays[0];
+    if (hotel) hotel.hidden = !stay;
+    if (empty) empty.hidden = Boolean(stay);
+    if (!stay) return;
+    if ($("#activeStayLabel")) $("#activeStayLabel").textContent = "STAY";
+    if ($("#activeStayStatus")) $("#activeStayStatus").textContent = stayNights(stay);
     if ($("#activeStayName")) $("#activeStayName").textContent = stay.name;
-    if ($("#activeStayAddress")) $("#activeStayAddress").textContent = stay.address;
-    if ($("#activeStayDates")) $("#activeStayDates").textContent = stay.dates;
-    if ($("#activeStayRoom")) $("#activeStayRoom").textContent = stay.room;
-    if ($("#activeStayCheckIn")) $("#activeStayCheckIn").textContent = stay.checkIn;
-    if ($("#activeStayCheckOut")) $("#activeStayCheckOut").textContent = stay.checkOut;
+    if ($("#activeStayAddress")) $("#activeStayAddress").textContent = stay.address || "주소 미입력";
+    if ($("#activeStayDates")) $("#activeStayDates").textContent = stayDates(stay);
+    if ($("#activeStayRoom")) $("#activeStayRoom").textContent = `${stay.room || "객실"} · ${stay.rooms}실`;
+    if ($("#activeStayCheckIn")) $("#activeStayCheckIn").textContent = stay.checkInTime || "시간 미정";
+    if ($("#activeStayCheckOut")) $("#activeStayCheckOut").textContent = stay.checkOutTime || "시간 미정";
     const map = $("#activeStayMap");
-    if (map) map.href = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(`${stay.name}, ${stay.address}`)}`;
+    if (map) map.href = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(stay.name + ", " + stay.address)}`;
     const copy = $("#activeStayCopy");
-    if (copy) copy.dataset.copy = stay.address;
+    if (copy) { copy.hidden = !stay.address; copy.dataset.copy = stay.address; }
+    const edit = $("#activeStayEdit");
+    if (edit) edit.dataset.id = stay.id;
+  }
+
+  function openTripSettings() {
+    const form = $("#tripSettingsForm");
+    if (!form) return;
+    form.elements.name.value = state.trip.name;
+    form.elements.startDate.value = state.trip.startDate;
+    form.elements.endDate.value = state.trip.endDate;
+    form.elements.mapUrl.value = state.trip.mapUrl;
+    $("#tripSettingsDialog").showModal();
+  }
+
+  function openStayDialog(id = "") {
+    const form = $("#stayForm");
+    if (!form) return;
+    form.reset(); delete form.dataset.editingId;
+    const stay = state.stays.find((item) => item.id === id);
+    $("#stayDialogTitle").textContent = stay ? "숙소 수정" : "숙소 추가";
+    if (stay) {
+      form.dataset.editingId = stay.id;
+      ["name", "address", "checkInDate", "checkOutDate", "checkInTime", "checkOutTime", "room", "rooms", "breakfast", "note"].forEach((key) => { form.elements[key].value = stay[key]; });
+    } else {
+      form.elements.checkInDate.value = state.trip.startDate;
+      form.elements.checkOutDate.value = state.trip.endDate;
+    }
+    $("#stayDialog").showModal();
+  }
+
+  function addParticipant(name) {
+    const person = { id: makeId("person"), name, active: true, createdAt: new Date().toISOString() };
+    state.participants.push(person);
+    state.checklist.push(...personalChecklistSeeds([person]));
+  }
+
+  function repairChecklistSelection() {
+    if (!checklistOwners().some((owner) => owner.id === state.ui.activeChecklistOwner)) state.ui.activeChecklistOwner = "common";
   }
 
   function setActiveDate(date, focusTarget = "") {
-    if (!VALID_DATES.has(date)) return;
+    if (!isValidDate(date)) return;
     state.ui.activeDate = date;
     saveState(false);
     renderDaySwitcher();
@@ -1086,7 +1016,7 @@
       currentDetail.textContent = "날씨 연결 필요";
     }
     const daily = data && data.daily ? data.daily : null;
-    TRIP_DAYS.forEach((tripDay) => {
+    tripDays().forEach((tripDay) => {
       const index = daily && Array.isArray(daily.time) ? daily.time.indexOf(tripDay.date) : -1;
       const rawMax = index >= 0 ? daily.temperature_2m_max?.[index] : null;
       const rawMin = index >= 0 ? daily.temperature_2m_min?.[index] : null;
@@ -1099,16 +1029,16 @@
       card.type = "button";
       card.dataset.date = tripDay.date;
       card.setAttribute("aria-pressed", String(isSelected));
-      const time = createElement("time", "", `${tripDay.number} ${tripDay.weekday}`);
+      const time = createElement("time", "", `${tripDay.month}/${tripDay.number} ${tripDay.weekday}`);
       time.dateTime = tripDay.date;
       card.append(time);
       if ([max, min, code].every(Number.isFinite)) {
         const info = weatherInfo(code);
         card.append(createWeatherIcon(info, "weather-day-icon"), createElement("strong", "", `${Math.round(max)}°/${Math.round(min)}°`), createElement("small", "weather-day-condition", info.label));
-        card.setAttribute("aria-label", `8월 ${tripDay.number}일 ${tripDay.weekday}요일 날씨, ${info.label}, 최고 ${Math.round(max)}도, 최저 ${Math.round(min)}도`);
+        card.setAttribute("aria-label", `${shortDate(tripDay.date)} ${tripDay.weekday}요일 날씨, ${info.label}, 최고 ${Math.round(max)}도, 최저 ${Math.round(min)}도`);
       } else {
         card.append(createWeatherIcon(weatherInfo(NaN), "weather-day-icon"), createElement("strong", "", "예보 전"), createElement("small", "weather-day-condition", "준비 중"));
-        card.setAttribute("aria-label", `8월 ${tripDay.number}일 ${tripDay.weekday}요일 날씨, 예보 준비 중`);
+        card.setAttribute("aria-label", `${shortDate(tripDay.date)} ${tripDay.weekday}요일 날씨, 예보 준비 중`);
       }
       days.append(card);
     });
@@ -1133,8 +1063,8 @@
     const title = $("#hourlyWeatherTitle");
     if (!container || !title) return;
 
-    const tripDay = TRIP_DAYS.find((day) => day.date === state.ui.activeDate) || TRIP_DAYS[0];
-    title.textContent = `시간별 · 8월 ${tripDay.number}일`;
+    const tripDay = tripDays().find((day) => day.date === state.ui.activeDate) || selectedDay();
+    title.textContent = tripDay.date ? `시간별 · ${shortDate(tripDay.date)}` : "시간별 예보";
     container.replaceChildren();
 
     const hourly = data && data.hourly ? data.hourly : null;
@@ -1150,7 +1080,7 @@
       const empty = createElement("div", "hourly-weather-empty");
       empty.append(
         createElement("strong", "", "시간별 예보 제공 전"),
-        createElement("span", "", "출발 16일 전부터 순차적으로 표시됩니다")
+        createElement("span", "", tripDay.date ? "현재부터 최대 16일 이내 예보가 표시됩니다" : "여행 날짜를 설정하면 날짜별·시간별 예보가 표시됩니다")
       );
       container.append(empty);
       return;
@@ -1379,7 +1309,7 @@
       const pill = createElement("span", `person-pill${person.active ? "" : " is-inactive"}`);
       pill.setAttribute("role", "listitem");
       pill.append(createElement("span", "", person.active ? person.name : `${person.name} · 정산 제외`));
-      if (person.active && !FIXED_PARTICIPANT_IDS.has(person.id)) {
+      if (person.active) {
         const remove = createElement("button", "", "×");
         remove.type = "button";
         remove.dataset.action = "remove-person";
@@ -1435,8 +1365,8 @@
       checkbox.name = "participantActive";
       checkbox.value = person.id;
       checkbox.checked = person.active;
-      checkbox.setAttribute("aria-label", `${person.name} 새 정산에 포함`);
-      activeLabel.append(checkbox, createElement("span", "", "정산 포함"));
+      checkbox.setAttribute("aria-label", `${person.name} 여행 참가`);
+      activeLabel.append(checkbox, createElement("span", "", "여행 참가"));
       row.append(nameLabel, activeLabel);
       list.append(row);
     });
@@ -1592,8 +1522,8 @@
     const section = window.location.hash.replace(/^#/, "");
     if (SECTIONS.has(section)) return section;
     const today = todayInHongKong();
-    if (today < TRIP_DAYS[0].date) return "prepare";
-    if (today > TRIP_DAYS[TRIP_DAYS.length - 1].date) return "settle";
+    if (!state.trip.startDate || today < state.trip.startDate) return "prepare";
+    if (state.trip.endDate && today > state.trip.endDate) return "settle";
     return "trip";
   }
 
@@ -1622,8 +1552,7 @@
   }
 
   function updateItineraryDialogDate(date) {
-    const day = TRIP_DAYS.find((item) => item.date === date) || selectedDay();
-    if ($("#itineraryDialogDate")) $("#itineraryDialogDate").textContent = `8월 ${day.number}일`;
+    if ($("#itineraryDialogDate")) $("#itineraryDialogDate").textContent = isValidDate(date) ? shortDate(date) : "날짜 선택";
   }
 
   function openItineraryDialog(prefill = null, itineraryId = "") {
@@ -1660,6 +1589,7 @@
   function openParticipantDialog() {
     const dialog = $("#participantDialog");
     if (!dialog) return;
+    $("#participantEditForm").elements.newName.value = "";
     renderParticipantEditor();
     dialog.showModal();
     window.setTimeout(() => $("[data-participant-id]", dialog)?.focus(), 50);
@@ -1690,8 +1620,10 @@
       updates.push({ id: input.dataset.participantId, name });
     }
 
+    const newName = cleanText(form.elements.newName.value, 30);
+    if (newName && names.has(newName.toLocaleLowerCase())) { showToast("같은 이름의 참가자가 있습니다", true); return; }
     const activeIds = new Set(new FormData(form).getAll("participantActive"));
-    if (!activeIds.size) {
+    if (!activeIds.size && !newName) {
       showToast("정산 참가자는 한 명 이상 필요합니다", true);
       $("[name='participantActive']", form)?.focus();
       return;
@@ -1703,11 +1635,13 @@
       person.name = update.name;
       person.active = activeIds.has(person.id);
     });
+    if (newName) addParticipant(newName);
+    form.elements.newName.value = "";
+    repairChecklistSelection();
     saveState(false);
     closeDialog("#participantDialog");
-    renderSettlement();
-    renderPrepare();
-    showToast("정산 참가자를 수정했습니다");
+    renderPage();
+    showToast("참가자를 수정했습니다");
   }
 
   function openExpenseDialog() {
@@ -1722,7 +1656,7 @@
     form.reset();
     clearPendingReceipt();
     renderExpensePeople();
-    $("#expenseDate").value = state.ui.activeDate;
+    $("#expenseDate").value = state.ui.activeDate || todayInHongKong();
     $("#expenseCurrency").value = "HKD";
     renderRate();
     dialog.showModal();
@@ -1948,7 +1882,7 @@
       const fxRateMicros = currency === "HKD" ? Math.round(rate * 1_000_000) : 0;
       state.expenses.push({
         id: expenseId,
-        date: /^\d{4}-\d{2}-\d{2}$/.test(formData.get("date")) ? formData.get("date") : START_DATE,
+        date: isValidDate(formData.get("date")) ? formData.get("date") : todayInHongKong(),
         category: VALID_CATEGORIES.has(formData.get("category")) ? formData.get("category") : "기타",
         description,
         currency,
@@ -1978,10 +1912,6 @@
   function removeParticipant(id) {
     const person = personById(id);
     if (!person || !person.active) return;
-    if (FIXED_PARTICIPANT_IDS.has(id)) {
-      showToast("개인 체크리스트가 연결된 참가자는 수정 화면에서 정산 포함을 꺼주세요", true);
-      return;
-    }
     if (state.participants.filter((entry) => entry.active).length <= 1) {
       showToast("참가자는 한 명 이상 필요합니다", true);
       return;
@@ -1992,10 +1922,12 @@
       showToast("이전 지출은 유지하고 새 정산에서 제외했습니다");
     } else {
       state.participants = state.participants.filter((entry) => entry.id !== id);
+      state.checklist = state.checklist.filter((item) => item.ownerId !== id);
       showToast("참가자를 삭제했습니다");
     }
+    repairChecklistSelection();
     saveState(false);
-    renderSettlement();
+    renderPage();
   }
 
   async function deleteExpense(id) {
@@ -2031,10 +1963,10 @@
     try {
       const records = await getAllReceipts().catch(() => []);
       const receipts = [];
-      for (const record of records) {
+      for (const record of records.filter((entry) => state.expenses.some((expense) => expense.id === entry.expenseId))) {
         receipts.push({ expenseId: record.expenseId, name: record.name, type: record.type, dataUrl: await blobToDataUrl(record.blob) });
       }
-      const payload = { appId: "trip-hongkong", formatVersion: 2, exportedAt: new Date().toISOString(), state, receipts };
+      const payload = { appId: "trip-hongkong", formatVersion: 3, exportedAt: new Date().toISOString(), state, receipts };
       const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
       const url = URL.createObjectURL(blob);
       const link = createElement("a");
@@ -2060,10 +1992,12 @@
     try {
       const parsed = JSON.parse(await file.text());
       if (parsed.appId && parsed.appId !== "trip-hongkong") throw new Error("Wrong app backup");
-      const incoming = normalizeState(parsed.state || parsed);
+      const rawState = parsed.state || parsed;
+      if (rawState.meta?.generation !== DATA_PREFIX) throw new Error("이전 여행 백업은 현재 여행과 형식이 다릅니다.");
+      const incoming = normalizeState(rawState);
       const receiptRows = Array.isArray(parsed.receipts) ? parsed.receipts.slice(0, 1000) : [];
       if (!window.confirm("현재 내용을 백업 파일의 내용으로 바꿀까요?")) return;
-      await clearReceipts().catch(() => {});
+      for (const expense of state.expenses) await deleteReceipt(expense.id).catch(() => {});
       const expenseIds = new Set(incoming.expenses.map((expense) => expense.id));
       for (const row of receiptRows) {
         if (!row || !expenseIds.has(row.expenseId)) continue;
@@ -2083,11 +2017,10 @@
   }
 
   async function resetSettlement() {
-    if (!window.confirm("참가자, 지출과 영수증을 모두 초기화할까요?")) return;
-    const fresh = defaultState();
-    state.participants = fresh.participants;
+    if (!window.confirm("현재 여행의 지출과 영수증을 초기화할까요? 참가자와 체크리스트는 유지됩니다.")) return;
+    const expenses = state.expenses;
     state.expenses = [];
-    await clearReceipts().catch(() => {});
+    for (const expense of expenses) await deleteReceipt(expense.id).catch(() => {});
     saveState(false);
     renderSettlement();
     showToast("정산을 초기화했습니다");
@@ -2135,6 +2068,15 @@
     const button = event.target.closest("[data-action]");
     if (!button) return;
     const { action, id } = button.dataset;
+    if (action === "open-trip-settings") openTripSettings();
+    if (action === "close-trip-settings") closeDialog("#tripSettingsDialog");
+    if (action === "open-stay") openStayDialog();
+    if (action === "edit-stay") openStayDialog(id);
+    if (action === "close-stay") closeDialog("#stayDialog");
+    if (action === "delete-stay") {
+      const stay = state.stays.find((item) => item.id === id);
+      if (stay && window.confirm(`${stay.name} 숙소를 삭제할까요?`)) { state.stays = state.stays.filter((item) => item.id !== id); saveState(); renderPrepare(); renderStayCard(); }
+    }
     if (action === "refresh-weather") fetchWeather(true);
     if (action === "refresh-rate") fetchRate(true);
     if (action === "toggle-theme") toggleTheme();
@@ -2186,7 +2128,7 @@
     });
     document.addEventListener("change", (event) => {
       const ownerInput = event.target.closest("[data-check-owner]");
-      if (ownerInput && ownerInput.checked && CHECK_OWNER_IDS.has(ownerInput.dataset.checkOwner)) {
+      if (ownerInput && ownerInput.checked && checklistOwners().some((owner) => owner.id === ownerInput.dataset.checkOwner)) {
         $("#checklistForm")?.reset();
         state.ui.activeChecklistOwner = ownerInput.dataset.checkOwner;
         saveState(false);
@@ -2235,7 +2177,8 @@
       const formData = new FormData(form);
       const title = cleanText(formData.get("title"), 80);
       if (!title) return;
-      const date = VALID_DATES.has(formData.get("date")) ? formData.get("date") : state.ui.activeDate;
+      const date = formData.get("date");
+      if (!isValidDate(date)) { showToast("날짜를 선택해 주세요", true); return; }
       const editingId = cleanText(form.dataset.editingId, 100);
       const editingIndex = editingId ? state.itinerary.findIndex((item) => item.id === editingId) : -1;
       if (editingId && editingIndex < 0) {
@@ -2271,11 +2214,48 @@
         showToast("같은 이름의 참가자가 있습니다", true);
         return;
       }
-      state.participants.push({ id: makeId("person"), name, active: true, createdAt: new Date().toISOString() });
+      addParticipant(name);
       event.currentTarget.reset();
       saveState(false);
       renderSettlement();
+      renderPrepare();
+      renderHome();
       showToast("참가자를 추가했습니다");
+    });
+
+    $("#tripSettingsForm")?.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const data = Object.fromEntries(new FormData(event.currentTarget));
+      if ((data.startDate && !isValidDate(data.startDate)) || (data.endDate && !isValidDate(data.endDate)) ||
+          Boolean(data.startDate) !== Boolean(data.endDate) || (data.endDate && data.endDate < data.startDate)) {
+        showToast("출발일과 마지막 날을 올바르게 입력해 주세요", true); return;
+      }
+      if (data.startDate && daysBetween(data.startDate, data.endDate) > 365) { showToast("여행 기간은 최대 366일까지 입력할 수 있습니다", true); return; }
+      if (data.mapUrl && !cleanChecklistUrl(data.mapUrl)) { showToast("올바른 지도 링크를 입력해 주세요", true); return; }
+      state.trip = sanitizeTrip(data);
+      state.ui.activeDate = bestActiveDate();
+      saveState(false);
+      closeDialog("#tripSettingsDialog");
+      renderPage();
+      showToast("여행 설정을 저장했습니다");
+    });
+
+    $("#stayForm")?.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const form = event.currentTarget;
+      const data = Object.fromEntries(new FormData(form));
+      if (data.checkInDate && data.checkOutDate && data.checkOutDate < data.checkInDate) { showToast("체크아웃 날짜가 체크인보다 빠릅니다", true); return; }
+      const id = form.dataset.editingId || makeId("hotel");
+      const [stay] = sanitizeStays([{ ...data, id }]);
+      if (!stay) return;
+      if (JSON.stringify(stay).length > 1000) { showToast("숙소 메모나 주소를 조금 줄여 주세요", true); return; }
+      const index = state.stays.findIndex((item) => item.id === id);
+      if (form.dataset.editingId && index < 0) { showToast("수정할 숙소를 찾지 못했습니다", true); return; }
+      if (index >= 0) state.stays[index] = stay; else state.stays.push(stay);
+      saveState(false);
+      closeDialog("#stayDialog");
+      renderPrepare(); renderStayCard();
+      showToast("숙소를 저장했습니다");
     });
 
     $("#participantEditForm")?.addEventListener("submit", saveParticipantEdits);
@@ -2310,13 +2290,15 @@
     $("#daySwitcher")?.addEventListener("keydown", (event) => {
       if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
       event.preventDefault();
-      const current = TRIP_DAYS.findIndex((day) => day.date === state.ui.activeDate);
+      const days = tripDays();
+      if (!days.length) return;
+      const current = days.findIndex((day) => day.date === state.ui.activeDate);
       let next = current;
-      if (event.key === "ArrowLeft") next = (current - 1 + TRIP_DAYS.length) % TRIP_DAYS.length;
-      if (event.key === "ArrowRight") next = (current + 1) % TRIP_DAYS.length;
+      if (event.key === "ArrowLeft") next = (current - 1 + days.length) % days.length;
+      if (event.key === "ArrowRight") next = (current + 1) % days.length;
       if (event.key === "Home") next = 0;
-      if (event.key === "End") next = TRIP_DAYS.length - 1;
-      setActiveDate(TRIP_DAYS[next].date, "day");
+      if (event.key === "End") next = days.length - 1;
+      setActiveDate(days[next].date, "day");
     });
 
     $(".phase-tabs")?.addEventListener("keydown", (event) => {
