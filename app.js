@@ -1170,7 +1170,7 @@
       locationResults.forEach((location, index) => {
         const button = createElement("button", "weather-location-result");
         button.type = "button"; button.dataset.action = "select-weather-location"; button.dataset.index = index;
-        button.append(createElement("strong", "", location.name), createElement("small", "", [...new Set([location.admin1, location.country].filter(Boolean))].join(" · ")));
+        button.append(createElement("strong", "", location.name), createElement("small", "", [...new Set([location.admin1, location.country].filter(Boolean))].join(" · ") || `${location.timezone.replaceAll("_", " ")} · ${location.latitude.toFixed(2)}, ${location.longitude.toFixed(2)}`));
         $("#weatherLocationResults").append(button);
       });
       $("#weatherLocationStatus").textContent = locationResults.length ? "날씨를 볼 지역을 선택해 주세요" : "검색 결과가 없어요. 영문 도시 이름으로도 검색해 보세요.";
@@ -2446,8 +2446,10 @@
       }
       if (event.key !== STORAGE_KEY || !event.newValue) return;
       try {
+        const previousLocation = weatherLocationKey();
         state = normalizeState(JSON.parse(event.newValue));
         renderPage();
+        if (previousLocation !== weatherLocationKey()) fetchWeather(false);
         showToast("다른 탭의 변경을 반영했습니다");
       } catch (error) {
         console.warn("다른 탭 데이터를 반영하지 못했습니다.", error);

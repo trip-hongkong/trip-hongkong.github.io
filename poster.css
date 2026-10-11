@@ -3193,3 +3193,21 @@ html[data-theme="dark"] .calm-ui .participant-active-field {
 .calm-ui .hourly-weather-empty { grid-column: 1 / -1; width: 100%; min-width: 0; }
 .calm-ui #currentWeatherDetail { display: block; white-space: normal; line-height: 1.6; }
 .calm-ui #weatherUpdated { overflow-wrap: anywhere; line-height: 1.7; }
+.calm-ui #weatherLocationForm > label { display: grid; gap: 8px; margin-bottom: 10px; }
+.calm-ui #weatherLocationForm > label > span { color: var(--ink-soft); font-size: 13px; font-weight: 650; }
+.calm-ui #weatherLocationForm input { width: 100%; min-height: 48px; margin: 0; font-size: 16px; }
+.calm-ui #weatherLocationSearch { width: 100%; min-height: 44px; margin-bottom: 10px; }
+.calm-ui #weatherLocationStatus { margin-bottom: 12px; }
+@media (min-width: 761px) {
+  .calm-ui .weather-days {
+    width: 100%;
+    min-width: 0;
+    grid-template-columns: none;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(84px, 1fr);
+    overflow-x: auto;
+    padding-bottom: 6px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--accent-line) transparent;
+  }
+}
