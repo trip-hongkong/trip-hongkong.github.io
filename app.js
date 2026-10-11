@@ -2215,6 +2215,9 @@
 
   function bindEvents() {
     document.addEventListener("click", handleClick);
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible" && ["home", "trip", "all"].includes(PAGE)) fetchWeather(false);
+    });
     $("#weatherDays")?.addEventListener("click", (event) => {
       const target = event.target instanceof Element ? event.target : null;
       const weatherDateButton = target?.closest(".weather-day[data-date]");
